@@ -71,9 +71,35 @@ CREATE TABLE IF NOT EXISTS user_info (
     role VARCHAR(50)
 );
 
+CREATE TABLE IF NOT EXISTS feed_data (
+    transaction_id BIGSERIAL PRIMARY KEY,
+    scenario_id BIGINT NOT NULL,
+    goc VARCHAR(50) NOT NULL,
+    account VARCHAR(50) NOT NULL,
+    fiscal_year INTEGER NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    jan_amt DECIMAL(15,2),
+    feb_amt DECIMAL(15,2),
+    mar_amt DECIMAL(15,2),
+    apr_amt DECIMAL(15,2),
+    may_amt DECIMAL(15,2),
+    jun_amt DECIMAL(15,2),
+    jul_amt DECIMAL(15,2),
+    aug_amt DECIMAL(15,2),
+    sep_amt DECIMAL(15,2),
+    oct_amt DECIMAL(15,2),
+    nov_amt DECIMAL(15,2),
+    dec_amt DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (scenario_id) REFERENCES scenario_info(scenario_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_fxrate_currency_year ON fxrate_info(currency, year);
 CREATE INDEX IF NOT EXISTS idx_scenario_name ON scenario_info(scenario_name);
 CREATE INDEX IF NOT EXISTS idx_account_period ON account_info(period_id);
 CREATE INDEX IF NOT EXISTS idx_segment_period ON segment_info(period_id);
 CREATE INDEX IF NOT EXISTS idx_geography_period ON geography_info(period_id);
 CREATE INDEX IF NOT EXISTS idx_goc_period ON goc_info(period_id);
+CREATE INDEX IF NOT EXISTS idx_feed_data_scenario ON feed_data(scenario_id);
+CREATE INDEX IF NOT EXISTS idx_feed_data_goc ON feed_data(goc);
+CREATE INDEX IF NOT EXISTS idx_feed_data_account ON feed_data(account);
