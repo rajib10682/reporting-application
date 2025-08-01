@@ -25,6 +25,15 @@ spring:
               args:
                 name: Access-Control-Allow-Origin
                 value: "*"
+        - id: business-metadata-service
+          uri: lb://report-service
+          predicates:
+            - Path=/api/business-metadata/**
+          filters:
+            - name: AddResponseHeader
+              args:
+                name: Access-Control-Allow-Origin
+                value: "*"
         - id: data-service
           uri: lb://data-service
           predicates:
