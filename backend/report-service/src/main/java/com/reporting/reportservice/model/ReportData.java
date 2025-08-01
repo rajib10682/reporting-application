@@ -13,6 +13,7 @@ public class ReportData {
     private Long reportId;
     
     private String category;
+    @Column(name = "data_value")
     private Double value;
     private String label;
     private String period;

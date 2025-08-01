@@ -12,7 +12,7 @@ public interface ReportTemplateRepository extends JpaRepository<ReportTemplate, 
     
     List<ReportTemplate> findByIsPublicTrue();
     
-    List<ReportTemplate> findByUserIdOrIsPublicTrue(Long userId, Boolean isPublic);
+    List<ReportTemplate> findByUserIdOrIsPublic(Long userId, Boolean isPublic);
     
     ReportTemplate findByUserIdAndTemplateName(Long userId, String templateName);
 }
