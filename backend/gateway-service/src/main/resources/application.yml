@@ -8,7 +8,7 @@ spring:
     gateway:
       routes:
         - id: user-service
-          uri: lb://user-service
+          uri: http://localhost:8081
           predicates:
             - Path=/api/users/**
           filters:
@@ -17,7 +17,7 @@ spring:
                 name: Access-Control-Allow-Origin
                 value: "*"
         - id: report-service
-          uri: lb://report-service
+          uri: http://localhost:8082
           predicates:
             - Path=/api/reports/**
           filters:
@@ -26,7 +26,7 @@ spring:
                 name: Access-Control-Allow-Origin
                 value: "*"
         - id: business-metadata-service
-          uri: lb://report-service
+          uri: http://localhost:8082
           predicates:
             - Path=/api/business-metadata/**
           filters:
@@ -35,7 +35,7 @@ spring:
                 name: Access-Control-Allow-Origin
                 value: "*"
         - id: data-service
-          uri: lb://data-service
+          uri: http://localhost:8083
           predicates:
             - Path=/api/data/**
           filters:
@@ -54,10 +54,3 @@ spring:
               - DELETE
               - OPTIONS
             allowedHeaders: "*"
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
