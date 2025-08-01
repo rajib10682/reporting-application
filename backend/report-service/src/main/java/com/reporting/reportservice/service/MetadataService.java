@@ -76,33 +76,67 @@ public class MetadataService {
     }
     
     @Transactional
-    public void initializeSampleMetadata() {
-        TableMetadata usersTable = new TableMetadata("users", "Users", "User information table");
-        TableMetadata ordersTable = new TableMetadata("orders", "Orders", "Customer orders table");
-        TableMetadata productsTable = new TableMetadata("products", "Products", "Product catalog table");
+    public void initializeBusinessMetadata() {
+        TableMetadata fxrateTable = new TableMetadata("fxrate_info", "FX Rates", "Foreign exchange rates by month and year");
+        TableMetadata scenarioTable = new TableMetadata("scenario_info", "Scenarios", "Business scenarios with date ranges");
+        TableMetadata accountTable = new TableMetadata("account_info", "Accounts", "Account hierarchy information");
+        TableMetadata segmentTable = new TableMetadata("segment_info", "Segments", "Business segment hierarchy");
+        TableMetadata geographyTable = new TableMetadata("geography_info", "Geography", "Geographic hierarchy information");
+        TableMetadata gocTable = new TableMetadata("goc_info", "GOC Information", "General Operating Company data");
+        TableMetadata userTable = new TableMetadata("user_info", "Users", "System user information");
         
-        usersTable = tableMetadataRepository.save(usersTable);
-        ordersTable = tableMetadataRepository.save(ordersTable);
-        productsTable = tableMetadataRepository.save(productsTable);
+        fxrateTable = tableMetadataRepository.save(fxrateTable);
+        scenarioTable = tableMetadataRepository.save(scenarioTable);
+        accountTable = tableMetadataRepository.save(accountTable);
+        segmentTable = tableMetadataRepository.save(segmentTable);
+        geographyTable = tableMetadataRepository.save(geographyTable);
+        gocTable = tableMetadataRepository.save(gocTable);
+        userTable = tableMetadataRepository.save(userTable);
         
-        columnMetadataRepository.save(new ColumnMetadata(usersTable, "id", "User ID", "BIGINT"));
-        columnMetadataRepository.save(new ColumnMetadata(usersTable, "name", "Full Name", "VARCHAR"));
-        columnMetadataRepository.save(new ColumnMetadata(usersTable, "email", "Email Address", "VARCHAR"));
-        columnMetadataRepository.save(new ColumnMetadata(usersTable, "created_at", "Registration Date", "TIMESTAMP"));
+        columnMetadataRepository.save(new ColumnMetadata(fxrateTable, "fx_id", "FX ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(fxrateTable, "fx_name", "FX Name", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(fxrateTable, "year", "Year", "INTEGER"));
+        columnMetadataRepository.save(new ColumnMetadata(fxrateTable, "currency", "Currency", "VARCHAR"));
+        for (int i = 1; i <= 12; i++) {
+            String monthName = getMonthName(i);
+            columnMetadataRepository.save(new ColumnMetadata(fxrateTable, "m" + i + "_rate", monthName + " Rate", "DECIMAL"));
+        }
         
-        columnMetadataRepository.save(new ColumnMetadata(ordersTable, "id", "Order ID", "BIGINT"));
-        columnMetadataRepository.save(new ColumnMetadata(ordersTable, "user_id", "Customer ID", "BIGINT"));
-        columnMetadataRepository.save(new ColumnMetadata(ordersTable, "product_id", "Product ID", "BIGINT"));
-        columnMetadataRepository.save(new ColumnMetadata(ordersTable, "quantity", "Quantity", "INTEGER"));
-        columnMetadataRepository.save(new ColumnMetadata(ordersTable, "total_amount", "Total Amount", "DECIMAL"));
-        columnMetadataRepository.save(new ColumnMetadata(ordersTable, "order_date", "Order Date", "TIMESTAMP"));
+        columnMetadataRepository.save(new ColumnMetadata(scenarioTable, "scenario_id", "Scenario ID", "BIGINT"));
+        columnMetadataRepository.save(new ColumnMetadata(scenarioTable, "scenario_name", "Scenario Name", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(scenarioTable, "start_date", "Start Date", "DATE"));
+        columnMetadataRepository.save(new ColumnMetadata(scenarioTable, "end_date", "End Date", "DATE"));
+        columnMetadataRepository.save(new ColumnMetadata(scenarioTable, "fx_rate", "FX Rate Reference", "VARCHAR"));
         
-        columnMetadataRepository.save(new ColumnMetadata(productsTable, "id", "Product ID", "BIGINT"));
-        columnMetadataRepository.save(new ColumnMetadata(productsTable, "name", "Product Name", "VARCHAR"));
-        columnMetadataRepository.save(new ColumnMetadata(productsTable, "category", "Category", "VARCHAR"));
-        columnMetadataRepository.save(new ColumnMetadata(productsTable, "price", "Unit Price", "DECIMAL"));
+        columnMetadataRepository.save(new ColumnMetadata(accountTable, "account_id", "Account ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(accountTable, "account_parent_id", "Parent Account ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(accountTable, "period_id", "Period ID", "VARCHAR"));
         
-        joinMetadataRepository.save(new JoinMetadata(ordersTable, usersTable, "user_id", "id", "INNER"));
-        joinMetadataRepository.save(new JoinMetadata(ordersTable, productsTable, "product_id", "id", "INNER"));
+        columnMetadataRepository.save(new ColumnMetadata(segmentTable, "segment_id", "Segment ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(segmentTable, "segment_parent_id", "Parent Segment ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(segmentTable, "period_id", "Period ID", "VARCHAR"));
+        
+        columnMetadataRepository.save(new ColumnMetadata(geographyTable, "geo_id", "Geography ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(geographyTable, "geo_parent_id", "Parent Geography ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(geographyTable, "period_id", "Period ID", "VARCHAR"));
+        
+        columnMetadataRepository.save(new ColumnMetadata(gocTable, "goc", "GOC", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(gocTable, "segment_id", "Segment ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(gocTable, "geo_id", "Geography ID", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(gocTable, "period_id", "Period ID", "VARCHAR"));
+        
+        columnMetadataRepository.save(new ColumnMetadata(userTable, "user_id", "User ID", "BIGINT"));
+        columnMetadataRepository.save(new ColumnMetadata(userTable, "name", "Name", "VARCHAR"));
+        columnMetadataRepository.save(new ColumnMetadata(userTable, "role", "Role", "VARCHAR"));
+        
+        joinMetadataRepository.save(new JoinMetadata(scenarioTable, fxrateTable, "fx_rate", "fx_id", "LEFT"));
+        joinMetadataRepository.save(new JoinMetadata(gocTable, segmentTable, "segment_id", "segment_id", "INNER"));
+        joinMetadataRepository.save(new JoinMetadata(gocTable, geographyTable, "geo_id", "geo_id", "INNER"));
+    }
+    
+    private String getMonthName(int month) {
+        String[] months = {"January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"};
+        return months[month - 1];
     }
 }

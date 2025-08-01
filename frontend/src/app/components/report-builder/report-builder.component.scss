@@ -8,74 +8,65 @@
   margin-bottom: 20px;
 }
 
-.full-width {
-  width: 100%;
+.section-panel {
   margin-bottom: 16px;
 }
 
-.section-panel {
-  margin-bottom: 16px;
-  
-  .mat-expansion-panel-header {
-    .mat-panel-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-  }
+.full-width {
+  width: 100%;
 }
 
 .column-selection, .filter-selection, .sort-selection {
-  .column-row, .filter-row, .sort-row {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    
-    mat-form-field {
-      flex: 1;
-      min-width: 150px;
-    }
-    
-    button {
-      flex-shrink: 0;
-    }
-  }
+  padding: 16px 0;
+}
+
+.column-row, .filter-row, .sort-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.column-row mat-form-field, 
+.filter-row mat-form-field, 
+.sort-row mat-form-field {
+  min-width: 150px;
+  flex: 1;
 }
 
 .query-preview {
   margin-top: 16px;
-  
-  .sql-preview {
-    background-color: #f5f5f5;
-    padding: 16px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    white-space: pre-wrap;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 16px;
-  }
 }
 
-.mat-card-actions {
+.sql-preview {
+  background-color: #f5f5f5;
   padding: 16px;
-  
-  button {
-    margin-left: 8px;
-  }
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  border: 1px solid #ddd;
 }
 
-@media (max-width: 768px) {
-  .column-row, .filter-row, .sort-row {
-    flex-direction: column;
-    align-items: stretch;
-    
-    mat-form-field {
-      width: 100%;
-    }
-  }
+.business-components {
+  margin: 20px 0;
+}
+
+.business-section {
+  padding: 16px;
+  margin: 8px 0;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
+}
+
+.business-section h4 {
+  margin: 0 0 8px 0;
+  color: #007bff;
+}
+
+.business-section p {
+  margin: 0;
+  color: #6c757d;
 }

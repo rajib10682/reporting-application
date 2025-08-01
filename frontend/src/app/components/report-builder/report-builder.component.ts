@@ -61,6 +61,8 @@ export class ReportBuilderComponent implements OnInit {
     sorting: []
   };
 
+  showBusinessComponents = false;
+
   filterOperators = [
     { value: '=', label: 'Equals' },
     { value: '!=', label: 'Not Equals' },
@@ -233,5 +235,19 @@ export class ReportBuilderComponent implements OnInit {
     return this.availableColumns.filter(col => 
       this.availableTables.find(table => table.tableName === tableName)?.columns?.includes(col)
     );
+  }
+
+  onTableSelectionChangeEnhanced() {
+    this.onTableSelectionChange();
+    this.checkForBusinessTables();
+  }
+
+  checkForBusinessTables() {
+    const businessTables = ['fxrate_info', 'scenario_info', 'account_info', 'segment_info', 'geography_info', 'goc_info'];
+    this.showBusinessComponents = this.selectedTables.some(table => businessTables.includes(table));
+  }
+
+  previewBusinessQuery() {
+    this.snackBar.open('Business query preview coming soon!', 'Close', { duration: 3000 });
   }
 }

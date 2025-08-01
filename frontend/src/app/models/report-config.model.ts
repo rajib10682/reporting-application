@@ -94,3 +94,30 @@ export interface QueueStats {
   executing: number;
   queued: number;
 }
+
+export interface BusinessQueryConfig {
+  queryType: 'fxrate' | 'scenario_fxrate' | 'goc_analysis' | 'hierarchical';
+  tableName?: string;
+  selectedColumns?: string[];
+  filters?: { [key: string]: any };
+  orderBy?: string;
+  includeHierarchy?: boolean;
+}
+
+export interface FxRateConfig {
+  currency: string;
+  year: number;
+  monthlyRates: string[];
+}
+
+export interface HierarchyConfig {
+  tableName: string;
+  periodId: string;
+  selectedNodes: any[];
+}
+
+export interface CompositeKeyJoin {
+  sourceTable: string;
+  targetTable: string;
+  joinColumns: string[];
+}

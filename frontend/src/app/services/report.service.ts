@@ -34,4 +34,8 @@ export class ReportService {
   getReportData(id: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/api/reports/${id}/data`);
   }
+
+  getRecentReports(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/api/reports/recent`);
+  }
 }

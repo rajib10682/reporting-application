@@ -29,6 +29,9 @@ public class ReportExecutionService {
     private QueryBuilderService queryBuilderService;
     
     @Autowired
+    private BusinessQueryBuilderService businessQueryBuilderService;
+    
+    @Autowired
     private QueueManagerService queueManagerService;
     
     @Autowired

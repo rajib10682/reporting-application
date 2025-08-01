@@ -26,7 +26,7 @@
         
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Available Tables</mat-label>
-          <mat-select multiple [(ngModel)]="selectedTables" (selectionChange)="onTableSelectionChange()">
+          <mat-select multiple [(ngModel)]="selectedTables" (selectionChange)="onTableSelectionChangeEnhanced()">
             <mat-option *ngFor="let table of availableTables" [value]="table.tableName">
               {{table.displayName}} ({{table.tableName}})
             </mat-option>
@@ -223,7 +223,7 @@
         </mat-expansion-panel-header>
         
         <div class="query-preview">
-          <button mat-raised-button color="accent" (click)="previewQuery()" [disabled]="isLoading">
+          <button mat-raised-button color="accent" (click)="showBusinessComponents ? previewBusinessQuery() : previewQuery()" [disabled]="isLoading">
             <mat-icon>preview</mat-icon>
             Generate Preview
           </button>
@@ -231,6 +231,35 @@
           <pre *ngIf="queryPreview" class="sql-preview">{{queryPreview}}</pre>
         </div>
       </mat-expansion-panel>
+
+      <!-- Business-specific components -->
+      <div *ngIf="showBusinessComponents" class="business-components">
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>Business Data Configuration</mat-panel-title>
+          </mat-expansion-panel-header>
+          
+          <div *ngIf="selectedTables.includes('fxrate_info')" class="business-section">
+            <h4>FX Rate Configuration</h4>
+            <p>Business-specific FX rate selection will be available in the dedicated Business Reports section.</p>
+          </div>
+          
+          <div *ngIf="selectedTables.includes('account_info')" class="business-section">
+            <h4>Account Hierarchy</h4>
+            <p>Account hierarchy browsing will be available in the dedicated Business Reports section.</p>
+          </div>
+          
+          <div *ngIf="selectedTables.includes('segment_info')" class="business-section">
+            <h4>Segment Hierarchy</h4>
+            <p>Segment hierarchy browsing will be available in the dedicated Business Reports section.</p>
+          </div>
+          
+          <div *ngIf="selectedTables.includes('geography_info')" class="business-section">
+            <h4>Geography Hierarchy</h4>
+            <p>Geography hierarchy browsing will be available in the dedicated Business Reports section.</p>
+          </div>
+        </mat-expansion-panel>
+      </div>
     </mat-card-content>
     
     <mat-card-actions align="end">

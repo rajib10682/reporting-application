@@ -26,6 +26,9 @@ public class ReportController {
     
     @Autowired
     private MetadataService metadataService;
+    
+    @Autowired
+    private BusinessQueryBuilderService businessQueryBuilderService;
 
     @GetMapping
     public List<Report> getAllReports() {
@@ -153,7 +156,7 @@ public class ReportController {
     
     @PostMapping("/metadata/initialize")
     public ResponseEntity<String> initializeMetadata() {
-        metadataService.initializeSampleMetadata();
-        return ResponseEntity.ok("Sample metadata initialized successfully");
+        metadataService.initializeBusinessMetadata();
+        return ResponseEntity.ok("Business metadata initialized successfully");
     }
 }
