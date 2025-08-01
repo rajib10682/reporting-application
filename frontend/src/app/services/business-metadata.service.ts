@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class BusinessMetadataService {
-  private apiUrl = `${environment.apiUrl}/business-metadata`;
+  private apiUrl = `${environment.apiUrl}/api/business-metadata`;
 
   constructor(private http: HttpClient) {}
 
