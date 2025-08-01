@@ -17,6 +17,15 @@ spring:
   h2:
     console:
       enabled: true
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
 
 eureka:
   client:
@@ -24,3 +33,15 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
+
+reporting:
+  concurrency:
+    max-concurrent-reports: 5
+    queue-timeout-minutes: 30
+  database:
+    query-timeout-seconds: 300
+    max-result-rows: 100000
+  export:
+    formats: [CSV, JSON, EXCEL]
+    max-file-size-mb: 50
+    output-directory: /tmp/reports

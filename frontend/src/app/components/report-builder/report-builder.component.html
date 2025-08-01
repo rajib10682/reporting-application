@@ -1,0 +1,244 @@
+<div class="report-builder-container">
+  <mat-card class="builder-card">
+    <mat-card-header>
+      <mat-card-title>Advanced Report Builder</mat-card-title>
+      <mat-card-subtitle>Create dynamic reports with custom queries</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <!-- Report Name -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Report Name</mat-label>
+        <input matInput [(ngModel)]="reportName" placeholder="Enter report name">
+      </mat-form-field>
+
+      <!-- Table Selection -->
+      <mat-expansion-panel class="section-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>table_view</mat-icon>
+            Select Tables
+          </mat-panel-title>
+          <mat-panel-description>
+            Choose data sources ({{selectedTables.length}} selected)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Available Tables</mat-label>
+          <mat-select multiple [(ngModel)]="selectedTables" (selectionChange)="onTableSelectionChange()">
+            <mat-option *ngFor="let table of availableTables" [value]="table.tableName">
+              {{table.displayName}} ({{table.tableName}})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-expansion-panel>
+
+      <!-- Column Selection -->
+      <mat-expansion-panel class="section-panel" [disabled]="selectedTables.length === 0">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>view_column</mat-icon>
+            Select Columns
+          </mat-panel-title>
+          <mat-panel-description>
+            Choose fields to include ({{selectedColumns.length}} selected)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <div class="column-selection">
+          <div *ngFor="let column of selectedColumns; let i = index" class="column-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Table</mat-label>
+              <mat-select [(ngModel)]="column.tableName" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let table of selectedTables" [value]="table">
+                  {{table}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Column</mat-label>
+              <mat-select [(ngModel)]="column.columnName" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let col of getColumnsForTable(column.tableName)" [value]="col.columnName">
+                  {{col.displayName}} ({{col.columnName}})
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Aggregation</mat-label>
+              <mat-select [(ngModel)]="column.aggregation" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let agg of aggregationFunctions" [value]="agg.value">
+                  {{agg.label}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Alias</mat-label>
+              <input matInput [(ngModel)]="column.alias" (ngModelChange)="updateQueryConfig()">
+            </mat-form-field>
+            
+            <button mat-icon-button color="warn" (click)="removeColumn(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          
+          <button mat-raised-button color="primary" (click)="addColumn()">
+            <mat-icon>add</mat-icon>
+            Add Column
+          </button>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Filters -->
+      <mat-expansion-panel class="section-panel" [disabled]="selectedTables.length === 0">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>filter_list</mat-icon>
+            Add Filters
+          </mat-panel-title>
+          <mat-panel-description>
+            Apply conditions ({{filters.length}} filters)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <div class="filter-selection">
+          <div *ngFor="let filter of filters; let i = index" class="filter-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Logical</mat-label>
+              <mat-select [(ngModel)]="filter.logicalOperator" (selectionChange)="updateQueryConfig()" [disabled]="i === 0">
+                <mat-option value="AND">AND</mat-option>
+                <mat-option value="OR">OR</mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Table</mat-label>
+              <mat-select [(ngModel)]="filter.tableName" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let table of selectedTables" [value]="table">
+                  {{table}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Column</mat-label>
+              <mat-select [(ngModel)]="filter.columnName" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let col of getColumnsForTable(filter.tableName)" [value]="col.columnName">
+                  {{col.displayName}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Operator</mat-label>
+              <mat-select [(ngModel)]="filter.operator" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let op of filterOperators" [value]="op.value">
+                  {{op.label}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Value</mat-label>
+              <input matInput [(ngModel)]="filter.value" (ngModelChange)="updateQueryConfig()">
+            </mat-form-field>
+            
+            <button mat-icon-button color="warn" (click)="removeFilter(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          
+          <button mat-raised-button color="primary" (click)="addFilter()">
+            <mat-icon>add</mat-icon>
+            Add Filter
+          </button>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Sorting -->
+      <mat-expansion-panel class="section-panel" [disabled]="selectedTables.length === 0">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>sort</mat-icon>
+            Sort Order
+          </mat-panel-title>
+          <mat-panel-description>
+            Define sorting ({{sorting.length}} sorts)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <div class="sort-selection">
+          <div *ngFor="let sort of sorting; let i = index" class="sort-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Table</mat-label>
+              <mat-select [(ngModel)]="sort.tableName" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let table of selectedTables" [value]="table">
+                  {{table}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Column</mat-label>
+              <mat-select [(ngModel)]="sort.columnName" (selectionChange)="updateQueryConfig()">
+                <mat-option *ngFor="let col of getColumnsForTable(sort.tableName)" [value]="col.columnName">
+                  {{col.displayName}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline">
+              <mat-label>Direction</mat-label>
+              <mat-select [(ngModel)]="sort.direction" (selectionChange)="updateQueryConfig()">
+                <mat-option value="ASC">Ascending</mat-option>
+                <mat-option value="DESC">Descending</mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <button mat-icon-button color="warn" (click)="removeSort(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          
+          <button mat-raised-button color="primary" (click)="addSort()">
+            <mat-icon>add</mat-icon>
+            Add Sort
+          </button>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Query Preview -->
+      <mat-expansion-panel class="section-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>code</mat-icon>
+            SQL Preview
+          </mat-panel-title>
+          <mat-panel-description>
+            Generated SQL query
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        
+        <div class="query-preview">
+          <button mat-raised-button color="accent" (click)="previewQuery()" [disabled]="isLoading">
+            <mat-icon>preview</mat-icon>
+            Generate Preview
+          </button>
+          
+          <pre *ngIf="queryPreview" class="sql-preview">{{queryPreview}}</pre>
+        </div>
+      </mat-expansion-panel>
+    </mat-card-content>
+    
+    <mat-card-actions align="end">
+      <button mat-raised-button color="primary" (click)="buildReport()" [disabled]="isLoading || !reportName.trim()">
+        <mat-spinner *ngIf="isLoading" diameter="20"></mat-spinner>
+        <mat-icon *ngIf="!isLoading">play_arrow</mat-icon>
+        Execute Report
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

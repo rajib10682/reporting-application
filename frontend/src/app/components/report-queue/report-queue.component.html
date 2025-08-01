@@ -1,0 +1,136 @@
+<div class="queue-container">
+  <!-- Queue Statistics -->
+  <mat-card class="stats-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>analytics</mat-icon>
+        Queue Statistics
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value">{{queueStats.executing}}</div>
+          <div class="stat-label">Executing</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{queueStats.queued}}</div>
+          <div class="stat-label">Queued</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{queueStatus.length}}</div>
+          <div class="stat-label">Total Active</div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Current Queue Status -->
+  <mat-card class="queue-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>queue</mat-icon>
+        Current Queue Status
+      </mat-card-title>
+      <mat-card-subtitle>Real-time view of all active reports</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="queueStatus" class="queue-table">
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let report">#{{report.id}}</td>
+        </ng-container>
+
+        <!-- Report Name Column -->
+        <ng-container matColumnDef="reportName">
+          <th mat-header-cell *matHeaderCellDef>Report Name</th>
+          <td mat-cell *matCellDef="let report">{{report.reportName}}</td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let report">
+            <mat-chip [color]="getStatusColor(report.status)" selected>
+              <mat-icon>{{getStatusIcon(report.status)}}</mat-icon>
+              {{report.status}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Priority Column -->
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef>Priority</th>
+          <td mat-cell *matCellDef="let report">
+            <div class="priority-indicator">
+              <mat-progress-bar 
+                mode="determinate" 
+                [value]="report.priority" 
+                [color]="report.priority > 75 ? 'warn' : 'primary'">
+              </mat-progress-bar>
+              <span class="priority-text">{{report.priority}}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Created At Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Created</th>
+          <td mat-cell *matCellDef="let report">{{formatDate(report.createdAt)}}</td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let report">
+            <button 
+              mat-icon-button 
+              *ngIf="report.status === 'COMPLETED'" 
+              (click)="downloadReport(report)"
+              matTooltip="Download Report">
+              <mat-icon>download</mat-icon>
+            </button>
+            <button 
+              mat-icon-button 
+              *ngIf="report.status === 'QUEUED'" 
+              (click)="getQueuePosition(report.id)"
+              matTooltip="Check Queue Position">
+              <mat-icon>info</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <div *ngIf="queueStatus.length === 0" class="no-data">
+        <mat-icon>inbox</mat-icon>
+        <p>No active reports in queue</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- User Reports -->
+  <mat-card class="user-reports-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>person</mat-icon>
+        My Reports
+      </mat-card-title>
+      <mat-card-subtitle>Your recent report history</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="userReports" class="user-reports-table">
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <div *ngIf="userReports.length === 0" class="no-data">
+        <mat-icon>assignment</mat-icon>
+        <p>No reports found</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
