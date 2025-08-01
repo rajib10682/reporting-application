@@ -27,12 +27,6 @@ spring:
         max-idle: 8
         min-idle: 0
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
 
 reporting:
   concurrency:
