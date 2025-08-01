@@ -1,0 +1,93 @@
+<div class="users-container">
+  <h1>User Management</h1>
+  
+  <!-- Add User Form -->
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>Add New User</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-grid">
+        <mat-form-field>
+          <mat-label>Username</mat-label>
+          <input matInput [(ngModel)]="newUser.username" placeholder="Enter username">
+        </mat-form-field>
+        
+        <mat-form-field>
+          <mat-label>Email</mat-label>
+          <input matInput [(ngModel)]="newUser.email" placeholder="Enter email" type="email">
+        </mat-form-field>
+        
+        <mat-form-field>
+          <mat-label>First Name</mat-label>
+          <input matInput [(ngModel)]="newUser.firstName" placeholder="Enter first name">
+        </mat-form-field>
+        
+        <mat-form-field>
+          <mat-label>Last Name</mat-label>
+          <input matInput [(ngModel)]="newUser.lastName" placeholder="Enter last name">
+        </mat-form-field>
+        
+        <mat-form-field>
+          <mat-label>Role</mat-label>
+          <input matInput [(ngModel)]="newUser.role" placeholder="Enter role">
+        </mat-form-field>
+      </div>
+      
+      <div class="form-actions">
+        <button mat-raised-button color="primary" (click)="createUser()">
+          <mat-icon>person_add</mat-icon>
+          Add User
+        </button>
+        <button mat-button (click)="resetForm()">Reset</button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Users Table -->
+  <mat-card class="table-card">
+    <mat-card-header>
+      <mat-card-title>Users List</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <table mat-table [dataSource]="users" class="users-table">
+        <ng-container matColumnDef="username">
+          <th mat-header-cell *matHeaderCellDef>Username</th>
+          <td mat-cell *matCellDef="let user">{{ user.username }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>Email</th>
+          <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="firstName">
+          <th mat-header-cell *matHeaderCellDef>First Name</th>
+          <td mat-cell *matCellDef="let user">{{ user.firstName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="lastName">
+          <th mat-header-cell *matHeaderCellDef>Last Name</th>
+          <td mat-cell *matCellDef="let user">{{ user.lastName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Role</th>
+          <td mat-cell *matCellDef="let user">{{ user.role }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let user">
+            <button mat-icon-button color="warn" (click)="deleteUser(user.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </mat-card-content>
+  </mat-card>
+</div>

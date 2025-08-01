@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - name: AddResponseHeader
+              args:
+                name: Access-Control-Allow-Origin
+                value: "*"
+        - id: report-service
+          uri: lb://report-service
+          predicates:
+            - Path=/api/reports/**
+          filters:
+            - name: AddResponseHeader
+              args:
+                name: Access-Control-Allow-Origin
+                value: "*"
+        - id: data-service
+          uri: lb://data-service
+          predicates:
+            - Path=/api/data/**
+          filters:
+            - name: AddResponseHeader
+              args:
+                name: Access-Control-Allow-Origin
+                value: "*"
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true

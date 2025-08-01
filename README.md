@@ -13,19 +13,19 @@ A comprehensive reporting application for data analysis and visualization.
 
 ## Tech Stack
 
-- **Frontend**: React with TypeScript, Tailwind CSS
-- **Backend**: FastAPI (Python)
-- **Database**: PostgreSQL
-- **Charts**: Recharts
-- **UI Components**: shadcn/ui
+- **Frontend**: Angular with TypeScript, Angular Material
+- **Backend**: Spring Boot Microservices (Java)
+- **Database**: H2 (in-memory for development)
+- **Charts**: Chart.js with ng2-charts
+- **UI Components**: Angular Material
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- Python (v3.8 or higher)
-- PostgreSQL
+- Java 17 or higher
+- Maven 3.6 or higher
 
 ### Installation
 
@@ -41,39 +41,42 @@ cd frontend
 npm install
 ```
 
-3. Install backend dependencies:
+3. Build and run backend services:
 ```bash
-cd ../backend
-pip install -r requirements.txt
+# Start each microservice in separate terminals
+cd backend/user-service && mvn spring-boot:run
+cd backend/report-service && mvn spring-boot:run
+cd backend/data-service && mvn spring-boot:run
+cd backend/gateway-service && mvn spring-boot:run
 ```
 
-4. Set up environment variables:
+4. Run the frontend:
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-5. Run the application:
-```bash
-# Start backend
-cd backend
-python main.py
-
-# Start frontend (in another terminal)
 cd frontend
-npm run dev
+ng serve
 ```
 
 ## Project Structure
 
 ```
 reporting-application/
-├── frontend/           # React frontend application
-├── backend/           # FastAPI backend application
-├── docs/             # Documentation
-├── scripts/          # Utility scripts
+├── frontend/                    # Angular frontend application
+├── backend/                     # Spring Boot microservices
+│   ├── user-service/           # User management service
+│   ├── report-service/         # Report generation service
+│   ├── data-service/           # Data processing service
+│   └── gateway-service/        # API Gateway service
+├── docs/                       # Documentation
+├── scripts/                    # Utility scripts
 └── README.md
 ```
+
+## Microservices
+
+- **User Service** (Port 8081): Manages user accounts and authentication
+- **Report Service** (Port 8082): Handles report creation and management
+- **Data Service** (Port 8083): Processes and analyzes data
+- **Gateway Service** (Port 8080): API Gateway for routing requests
 
 ## Contributing
 
