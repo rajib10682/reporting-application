@@ -193,12 +193,24 @@ public class FeedIngestionService {
     }
     
     private void applyCurrencyTransformation(FeedData feedData) {
-        String sql = "SELECT m1_rate, m2_rate, m3_rate, m4_rate, m5_rate, m6_rate, " +
-                    "m7_rate, m8_rate, m9_rate, m10_rate, m11_rate, m12_rate " +
-                    "FROM fxrate_info WHERE currency = ? AND year = ?";
+        String scenarioSql = "SELECT fx_rate FROM scenario_info WHERE scenario_id = ?";
+        String fxRate;
         
         try {
-            Map<String, Object> rates = jdbcTemplate.queryForMap(sql, feedData.getCurrency(), feedData.getFiscalYear());
+            fxRate = jdbcTemplate.queryForObject(scenarioSql, String.class, feedData.getScenarioId());
+            if (fxRate == null) {
+                throw new ValidationException("No FX rate found for scenario ID: " + feedData.getScenarioId());
+            }
+        } catch (Exception e) {
+            throw new ValidationException("Failed to get FX rate from scenario: " + e.getMessage());
+        }
+        
+        String ratesSql = "SELECT m1_rate, m2_rate, m3_rate, m4_rate, m5_rate, m6_rate, " +
+                         "m7_rate, m8_rate, m9_rate, m10_rate, m11_rate, m12_rate " +
+                         "FROM fxrate_info WHERE fx_name = ? AND year = ? AND currency = ?";
+        
+        try {
+            Map<String, Object> rates = jdbcTemplate.queryForMap(ratesSql, fxRate, feedData.getFiscalYear(), feedData.getCurrency());
             
             if (feedData.getJanAmt() != null && rates.get("m1_rate") != null) {
                 feedData.setJanAmt(feedData.getJanAmt().multiply(new BigDecimal(rates.get("m1_rate").toString())));
