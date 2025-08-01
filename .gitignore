@@ -50,6 +50,9 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+target/
+**/target/
+*.class
 
 # Database
 *.db
