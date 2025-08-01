@@ -1,0 +1,26 @@
+{
+  "name": "reporting-application",
+  "version": "1.0.0",
+  "description": "A comprehensive reporting application for data analysis and visualization",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python main.py",
+    "build": "cd frontend && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "reporting",
+    "dashboard",
+    "analytics",
+    "visualization",
+    "react",
+    "fastapi"
+  ],
+  "author": "rajib10682",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
