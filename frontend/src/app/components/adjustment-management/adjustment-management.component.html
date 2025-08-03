@@ -35,13 +35,13 @@
                   </mat-select>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Upload Type</mat-label>
+                <div class="full-width">
+                  <label class="upload-type-label">Upload Type</label>
                   <mat-radio-group [(ngModel)]="uploadType" class="radio-group">
                     <mat-radio-button value="incremental">Incremental</mat-radio-button>
                     <mat-radio-button value="replace">Replace</mat-radio-button>
                   </mat-radio-group>
-                </mat-form-field>
+                </div>
 
                 <div class="file-upload-section">
                   <input type="file" 
@@ -100,7 +100,7 @@
                   <mat-card-header>
                     <mat-card-title>Session #{{adjustment.sessionId}}</mat-card-title>
                     <mat-card-subtitle>
-                      Scenario: {{adjustment.scenarioName}} | 
+                      Scenario: {{getScenarioName(adjustment.scenarioId)}} | 
                       Submitted: {{adjustment.createdAt | date:'medium'}}
                     </mat-card-subtitle>
                   </mat-card-header>
@@ -192,8 +192,8 @@
                          {{adjustment.successfulRecords}} successful, 
                          {{adjustment.failedRecords}} failed</p>
                       
-                      <div *ngIf="adjustment.comments" class="comments">
-                        <strong>Comments:</strong> {{adjustment.comments}}
+                      <div *ngIf="adjustment.approvalComments" class="comments">
+                        <strong>Comments:</strong> {{adjustment.approvalComments}}
                       </div>
                     </div>
                   </mat-card-content>
