@@ -27,6 +27,17 @@ public class BusinessMetadataController {
         return ResponseEntity.ok(currencies);
     }
     
+    @GetMapping("/scenarios")
+    public ResponseEntity<List<Map<String, Object>>> getAvailableScenarios() {
+        try {
+            String sql = "SELECT scenario_id, scenario_name, start_date, end_date, fx_rate FROM scenario_info ORDER BY scenario_name";
+            List<Map<String, Object>> scenarios = metadataService.executeQuery(sql);
+            return ResponseEntity.ok(scenarios);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
     @GetMapping("/fxrates/years")
     public ResponseEntity<List<Integer>> getAvailableYears() {
         List<Integer> years = Arrays.asList(2020, 2021, 2022, 2023, 2024, 2025);

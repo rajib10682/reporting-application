@@ -45,6 +45,10 @@ import { MatMenuModule } from '@angular/material/menu';
           <mat-icon>cloud_upload</mat-icon>
           <span>Data Ingestion</span>
         </button>
+        <button mat-button routerLink="/adjustments" routerLinkActive="active-nav">
+          <mat-icon>tune</mat-icon>
+          <span>Adjustments</span>
+        </button>
         <button mat-button routerLink="/users" routerLinkActive="active-nav">
           <mat-icon>people</mat-icon>
           <span>Users</span>

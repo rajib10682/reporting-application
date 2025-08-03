@@ -5,6 +5,7 @@ import { ReportBuilderComponent } from './components/report-builder/report-build
 import { ReportQueueComponent } from './components/report-queue/report-queue.component';
 import { SimpleBusinessBuilderComponent } from './components/simple-business-builder/simple-business-builder.component';
 import { DataIngestionComponent } from './components/data-ingestion/data-ingestion.component';
+import { AdjustmentManagementComponent } from './components/adjustment-management/adjustment-management.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'report-builder', component: ReportBuilderComponent },
   { path: 'report-queue', component: ReportQueueComponent },
   { path: 'business-reports', component: SimpleBusinessBuilderComponent },
-  { path: 'data-ingestion', component: DataIngestionComponent }
+  { path: 'data-ingestion', component: DataIngestionComponent },
+  { path: 'adjustments', component: AdjustmentManagementComponent }
 ];

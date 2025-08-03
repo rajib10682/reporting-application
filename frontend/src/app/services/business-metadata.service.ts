@@ -19,6 +19,10 @@ export class BusinessMetadataService {
     return this.http.get<number[]>(`${this.apiUrl}/fxrates/years`);
   }
 
+  getAvailableScenarios(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/scenarios`);
+  }
+
   getAvailablePeriods(): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/periods`);
   }

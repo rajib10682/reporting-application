@@ -122,3 +122,55 @@ CREATE INDEX IF NOT EXISTS idx_feed_data_goc ON feed_data(goc);
 CREATE INDEX IF NOT EXISTS idx_feed_data_account ON feed_data(account);
 CREATE INDEX IF NOT EXISTS idx_session_start_time ON file_ingestion_session(start_time);
 CREATE INDEX IF NOT EXISTS idx_session_status ON file_ingestion_session(status);
+
+CREATE TABLE IF NOT EXISTS adjustment_session (
+    session_id BIGSERIAL PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    scenario_id BIGINT NOT NULL,
+    upload_type VARCHAR(20) NOT NULL, -- INCREMENTAL or REPLACE
+    submitted_by BIGINT NOT NULL,
+    approved_by BIGINT,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    duration_ms BIGINT,
+    total_records INTEGER,
+    successful_records INTEGER,
+    failed_records INTEGER,
+    status VARCHAR(50) NOT NULL, -- PENDING, APPROVED, REJECTED, PROCESSING, COMPLETED
+    error_message VARCHAR(1000),
+    approval_comments VARCHAR(1000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP,
+    FOREIGN KEY (scenario_id) REFERENCES scenario_info(scenario_id)
+);
+
+CREATE TABLE IF NOT EXISTS adjustment_data (
+    record_id BIGSERIAL PRIMARY KEY,
+    adjustment_session_id BIGINT NOT NULL,
+    scenario_id BIGINT NOT NULL,
+    goc VARCHAR(50) NOT NULL,
+    account VARCHAR(50) NOT NULL,
+    fiscal_year INTEGER NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    jan_amt DECIMAL(15,2),
+    feb_amt DECIMAL(15,2),
+    mar_amt DECIMAL(15,2),
+    apr_amt DECIMAL(15,2),
+    may_amt DECIMAL(15,2),
+    jun_amt DECIMAL(15,2),
+    jul_amt DECIMAL(15,2),
+    aug_amt DECIMAL(15,2),
+    sep_amt DECIMAL(15,2),
+    oct_amt DECIMAL(15,2),
+    nov_amt DECIMAL(15,2),
+    dec_amt DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (adjustment_session_id) REFERENCES adjustment_session(session_id),
+    FOREIGN KEY (scenario_id) REFERENCES scenario_info(scenario_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_adjustment_session_status ON adjustment_session(status);
+CREATE INDEX IF NOT EXISTS idx_adjustment_session_submitted_by ON adjustment_session(submitted_by);
+CREATE INDEX IF NOT EXISTS idx_adjustment_session_scenario ON adjustment_session(scenario_id);
+CREATE INDEX IF NOT EXISTS idx_adjustment_data_session ON adjustment_data(adjustment_session_id);
+CREATE INDEX IF NOT EXISTS idx_adjustment_data_scenario ON adjustment_data(scenario_id);
