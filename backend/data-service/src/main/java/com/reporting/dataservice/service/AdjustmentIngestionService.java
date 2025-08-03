@@ -41,9 +41,6 @@ public class AdjustmentIngestionService {
     private AdjustmentSessionRepository adjustmentSessionRepository;
     
     @Autowired
-    private UserInfoRepository userInfoRepository;
-    
-    @Autowired
     private JdbcTemplate jdbcTemplate;
     
     private static final List<String> VALID_CURRENCIES = Arrays.asList("USD", "EUR", "GBP", "JPY", "CAD", "AUD");
