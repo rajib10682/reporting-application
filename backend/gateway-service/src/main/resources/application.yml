@@ -35,9 +35,9 @@ spring:
                 name: Access-Control-Allow-Origin
                 value: "*"
         - id: data-service
-          uri: http://localhost:8083
+          uri: http://localhost:8081
           predicates:
-            - Path=/api/data/**
+            - Path=/api/data/**,/api/adjustments/**
           filters:
             - name: AddResponseHeader
               args:
