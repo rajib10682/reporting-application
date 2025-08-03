@@ -9,8 +9,11 @@ import java.time.LocalDateTime;
 public class FeedData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "transaction_id")
-    private Long transactionId;
+    @Column(name = "record_id")
+    private Long recordId;
+    
+    @Column(name = "ingestion_session_id", nullable = false)
+    private Long ingestionSessionId;
     
     @Column(name = "scenario_id", nullable = false)
     private Long scenarioId;
@@ -70,8 +73,11 @@ public class FeedData {
         this.createdAt = LocalDateTime.now();
     }
     
-    public Long getTransactionId() { return transactionId; }
-    public void setTransactionId(Long transactionId) { this.transactionId = transactionId; }
+    public Long getRecordId() { return recordId; }
+    public void setRecordId(Long recordId) { this.recordId = recordId; }
+    
+    public Long getIngestionSessionId() { return ingestionSessionId; }
+    public void setIngestionSessionId(Long ingestionSessionId) { this.ingestionSessionId = ingestionSessionId; }
     
     public Long getScenarioId() { return scenarioId; }
     public void setScenarioId(Long scenarioId) { this.scenarioId = scenarioId; }

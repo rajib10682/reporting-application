@@ -4,7 +4,9 @@ import com.reporting.dataservice.dto.IngestionStatus;
 import com.reporting.dataservice.dto.ValidationResult;
 import com.reporting.dataservice.exception.ValidationException;
 import com.reporting.dataservice.model.FeedData;
+import com.reporting.dataservice.model.FileIngestionSession;
 import com.reporting.dataservice.repository.FeedDataRepository;
+import com.reporting.dataservice.repository.FileIngestionSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -26,12 +28,22 @@ public class FeedIngestionService {
     private FeedDataRepository feedDataRepository;
     
     @Autowired
+    private FileIngestionSessionRepository sessionRepository;
+    
+    @Autowired
     private JdbcTemplate jdbcTemplate;
     
     private static final List<String> VALID_CURRENCIES = Arrays.asList("USD", "EUR", "GBP", "JPY", "CAD", "AUD");
     
     public IngestionStatus processFeedFile(MultipartFile file) {
+        FileIngestionSession session = new FileIngestionSession(file.getOriginalFilename());
+        session.setStatus("PROCESSING");
+        session = sessionRepository.save(session);
+        
         IngestionStatus status = new IngestionStatus();
+        status.setSessionId(session.getSessionId());
+        status.setFilename(session.getFilename());
+        status.setStartTime(session.getStartTime());
         status.setStatus("PROCESSING");
         
         List<FeedData> feedDataList = new ArrayList<>();
@@ -46,6 +58,7 @@ public class FeedIngestionService {
                 
                 try {
                     FeedData feedData = parseLine(line, lineNumber);
+                    feedData.setIngestionSessionId(session.getSessionId()); // Set shared session ID
                     ValidationResult validation = validateFeedData(feedData);
                     
                     if (validation.isValid()) {
@@ -63,25 +76,41 @@ public class FeedIngestionService {
                 }
             }
             
-            status.setTotalRecords(lineNumber);
-            status.setSuccessfulRecords(feedDataList.size());
-            status.setFailedRecords(errors.size());
+            session.setTotalRecords(lineNumber);
+            session.setSuccessfulRecords(feedDataList.size());
+            session.setFailedRecords(errors.size());
             
             if (!feedDataList.isEmpty()) {
                 feedDataRepository.saveAll(feedDataList);
             }
             
             if (errors.isEmpty()) {
+                session.setStatus("COMPLETED");
+                session.setErrorMessage("All records processed successfully");
                 status.setStatus("COMPLETED");
                 status.setMessage("All records processed successfully");
             } else {
+                session.setStatus("COMPLETED_WITH_ERRORS");
+                String errorMessage = "Processed with " + errors.size() + " errors: " + String.join("; ", errors);
+                session.setErrorMessage(errorMessage);
                 status.setStatus("COMPLETED_WITH_ERRORS");
-                status.setMessage("Processed with " + errors.size() + " errors: " + String.join("; ", errors));
+                status.setMessage(errorMessage);
             }
             
         } catch (IOException e) {
+            session.setStatus("FAILED");
+            session.setErrorMessage("Failed to read file: " + e.getMessage());
             status.setStatus("FAILED");
             status.setMessage("Failed to read file: " + e.getMessage());
+        } finally {
+            session.markCompleted();
+            session = sessionRepository.save(session);
+            
+            status.setTotalRecords(session.getTotalRecords());
+            status.setSuccessfulRecords(session.getSuccessfulRecords());
+            status.setFailedRecords(session.getFailedRecords());
+            status.setEndTime(session.getEndTime());
+            status.setDurationMs(session.getDurationMs());
         }
         
         return status;

@@ -71,8 +71,23 @@ CREATE TABLE IF NOT EXISTS user_info (
     role VARCHAR(50)
 );
 
+CREATE TABLE IF NOT EXISTS file_ingestion_session (
+    session_id BIGSERIAL PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    duration_ms BIGINT,
+    total_records INTEGER,
+    successful_records INTEGER,
+    failed_records INTEGER,
+    status VARCHAR(50),
+    error_message VARCHAR(1000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS feed_data (
-    transaction_id BIGSERIAL PRIMARY KEY,
+    record_id BIGSERIAL PRIMARY KEY,
+    ingestion_session_id BIGINT NOT NULL,
     scenario_id BIGINT NOT NULL,
     goc VARCHAR(50) NOT NULL,
     account VARCHAR(50) NOT NULL,
@@ -91,6 +106,7 @@ CREATE TABLE IF NOT EXISTS feed_data (
     nov_amt DECIMAL(15,2),
     dec_amt DECIMAL(15,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ingestion_session_id) REFERENCES file_ingestion_session(session_id),
     FOREIGN KEY (scenario_id) REFERENCES scenario_info(scenario_id)
 );
 
@@ -100,6 +116,9 @@ CREATE INDEX IF NOT EXISTS idx_account_period ON account_info(period_id);
 CREATE INDEX IF NOT EXISTS idx_segment_period ON segment_info(period_id);
 CREATE INDEX IF NOT EXISTS idx_geography_period ON geography_info(period_id);
 CREATE INDEX IF NOT EXISTS idx_goc_period ON goc_info(period_id);
+CREATE INDEX IF NOT EXISTS idx_feed_data_session ON feed_data(ingestion_session_id);
 CREATE INDEX IF NOT EXISTS idx_feed_data_scenario ON feed_data(scenario_id);
 CREATE INDEX IF NOT EXISTS idx_feed_data_goc ON feed_data(goc);
 CREATE INDEX IF NOT EXISTS idx_feed_data_account ON feed_data(account);
+CREATE INDEX IF NOT EXISTS idx_session_start_time ON file_ingestion_session(start_time);
+CREATE INDEX IF NOT EXISTS idx_session_status ON file_ingestion_session(status);

@@ -16,6 +16,11 @@ interface IngestionStatus {
   successfulRecords: number;
   failedRecords: number;
   message: string;
+  sessionId: number;
+  filename: string;
+  startTime: string;
+  endTime: string;
+  durationMs: number;
 }
 
 @Component({
@@ -42,7 +47,7 @@ export class DataIngestionComponent {
   uploadProgress = 0;
   ingestionHistory: IngestionStatus[] = [];
   
-  displayedColumns: string[] = ['timestamp', 'filename', 'status', 'records', 'message'];
+  displayedColumns: string[] = ['timestamp', 'filename', 'status', 'records', 'duration', 'message'];
 
   constructor(
     private http: HttpClient,
@@ -135,6 +140,20 @@ export class DataIngestionComponent {
 
   formatTimestamp(timestamp: Date): string {
     return new Date(timestamp).toLocaleString();
+  }
+
+  formatDuration(durationMs: number): string {
+    if (!durationMs) return 'N/A';
+    
+    if (durationMs < 1000) {
+      return `${durationMs}ms`;
+    } else if (durationMs < 60000) {
+      return `${(durationMs / 1000).toFixed(1)}s`;
+    } else {
+      const minutes = Math.floor(durationMs / 60000);
+      const seconds = Math.floor((durationMs % 60000) / 1000);
+      return `${minutes}m ${seconds}s`;
+    }
   }
 
   triggerFileInput(): void {
