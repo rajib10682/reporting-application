@@ -7,9 +7,11 @@ import com.reporting.dataservice.dto.ValidationResult;
 import com.reporting.dataservice.exception.ValidationException;
 import com.reporting.dataservice.model.AdjustmentData;
 import com.reporting.dataservice.model.AdjustmentSession;
+import com.reporting.dataservice.model.FileIngestionSession;
 import com.reporting.dataservice.model.UserInfo;
 import com.reporting.dataservice.repository.AdjustmentDataRepository;
 import com.reporting.dataservice.repository.AdjustmentSessionRepository;
+import com.reporting.dataservice.repository.FileIngestionSessionRepository;
 import com.reporting.dataservice.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -39,6 +41,9 @@ public class AdjustmentIngestionService {
     
     @Autowired
     private AdjustmentSessionRepository adjustmentSessionRepository;
+    
+    @Autowired
+    private FileIngestionSessionRepository fileIngestionSessionRepository;
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -467,15 +472,26 @@ public class AdjustmentIngestionService {
     }
     
     private void copyAdjustmentDataToFeedData(Long adjustmentSessionId) {
-        String sql = "INSERT INTO feed_data (scenario_id, goc, account, fiscal_year, currency, " +
+        AdjustmentSession adjustmentSession = adjustmentSessionRepository.findById(adjustmentSessionId)
+            .orElseThrow(() -> new ValidationException("Adjustment session not found"));
+        
+        FileIngestionSession fileSession = new FileIngestionSession(adjustmentSession.getFilename() + " (Approved)");
+        fileSession.setStatus("COMPLETED");
+        fileSession.setTotalRecords(adjustmentSession.getTotalRecords());
+        fileSession.setSuccessfulRecords(adjustmentSession.getSuccessfulRecords());
+        fileSession.setFailedRecords(adjustmentSession.getFailedRecords());
+        fileSession.markCompleted();
+        fileSession = fileIngestionSessionRepository.save(fileSession);
+        
+        String sql = "INSERT INTO feed_data (ingestion_session_id, scenario_id, goc, account, fiscal_year, currency, " +
                     "jan_amt, feb_amt, mar_amt, apr_amt, may_amt, jun_amt, jul_amt, aug_amt, " +
                     "sep_amt, oct_amt, nov_amt, dec_amt, created_at) " +
-                    "SELECT scenario_id, goc, account, fiscal_year, currency, " +
+                    "SELECT ?, scenario_id, goc, account, fiscal_year, currency, " +
                     "jan_amt, feb_amt, mar_amt, apr_amt, may_amt, jun_amt, jul_amt, aug_amt, " +
                     "sep_amt, oct_amt, nov_amt, dec_amt, created_at " +
                     "FROM adjustment_data WHERE adjustment_session_id = ?";
         
-        jdbcTemplate.update(sql, adjustmentSessionId);
+        jdbcTemplate.update(sql, fileSession.getSessionId(), adjustmentSessionId);
     }
     
     public List<UserInfo> getAllUsers() {
