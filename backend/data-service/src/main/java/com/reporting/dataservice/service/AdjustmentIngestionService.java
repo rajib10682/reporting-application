@@ -22,6 +22,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 public class AdjustmentIngestionService {
@@ -60,33 +63,15 @@ public class AdjustmentIngestionService {
         List<AdjustmentData> adjustmentDataList = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
-            String line;
-            int lineNumber = 0;
-            
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                
-                try {
-                    AdjustmentData adjustmentData = parseAdjustmentLine(line, lineNumber, request.getScenarioId());
-                    adjustmentData.setAdjustmentSessionId(session.getSessionId());
-                    ValidationResult validation = validateAdjustmentData(adjustmentData);
-                    
-                    if (validation.isValid()) {
-                        adjustmentDataList.add(adjustmentData);
-                    } else {
-                        final int currentLineNumber = lineNumber;
-                        errors.addAll(validation.getErrors().stream()
-                            .map(error -> "Line " + currentLineNumber + ": " + error)
-                            .toList());
-                    }
-                } catch (Exception e) {
-                    final int currentLineNumber = lineNumber;
-                    errors.add("Line " + currentLineNumber + ": " + e.getMessage());
-                }
+        try {
+            String filename = file.getOriginalFilename();
+            if (filename != null && filename.toLowerCase().endsWith(".xlsx")) {
+                processExcelFile(file, request.getScenarioId(), session.getSessionId(), adjustmentDataList, errors);
+            } else {
+                processTextFile(file, request.getScenarioId(), session.getSessionId(), adjustmentDataList, errors);
             }
             
-            session.setTotalRecords(lineNumber);
+            session.setTotalRecords(adjustmentDataList.size() + errors.size());
             session.setSuccessfulRecords(adjustmentDataList.size());
             session.setFailedRecords(errors.size());
             
@@ -103,7 +88,7 @@ public class AdjustmentIngestionService {
                 status.setMessage(errorMessage);
             }
             
-        } catch (IOException e) {
+        } catch (Exception e) {
             session.setStatus("FAILED");
             session.setErrorMessage("Failed to read file: " + e.getMessage());
             status.setStatus("FAILED");
@@ -287,6 +272,193 @@ public class AdjustmentIngestionService {
     
     private boolean validateCurrency(String currency) {
         return VALID_CURRENCIES.contains(currency.toUpperCase());
+    }
+    
+    private void processExcelFile(MultipartFile file, Long scenarioId, Long sessionId, 
+                                 List<AdjustmentData> adjustmentDataList, List<String> errors) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowNumber = 0;
+            
+            for (Row row : sheet) {
+                rowNumber++;
+                if (rowNumber == 1) continue; // Skip header row
+                
+                try {
+                    AdjustmentData adjustmentData = parseExcelRow(row, rowNumber, scenarioId);
+                    adjustmentData.setAdjustmentSessionId(sessionId);
+                    ValidationResult validation = validateAdjustmentData(adjustmentData);
+                    
+                    if (validation.isValid()) {
+                        applyCurrencyTransformation(adjustmentData);
+                        adjustmentDataList.add(adjustmentData);
+                    } else {
+                        final int currentRowNumber = rowNumber;
+                        errors.addAll(validation.getErrors().stream()
+                            .map(error -> "Row " + currentRowNumber + ": " + error)
+                            .toList());
+                    }
+                } catch (Exception e) {
+                    final int currentRowNumber = rowNumber;
+                    errors.add("Row " + currentRowNumber + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+    
+    private void processTextFile(MultipartFile file, Long scenarioId, Long sessionId,
+                                List<AdjustmentData> adjustmentDataList, List<String> errors) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            int lineNumber = 0;
+            
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                
+                try {
+                    AdjustmentData adjustmentData = parseAdjustmentLine(line, lineNumber, scenarioId);
+                    adjustmentData.setAdjustmentSessionId(sessionId);
+                    ValidationResult validation = validateAdjustmentData(adjustmentData);
+                    
+                    if (validation.isValid()) {
+                        applyCurrencyTransformation(adjustmentData);
+                        adjustmentDataList.add(adjustmentData);
+                    } else {
+                        final int currentLineNumber = lineNumber;
+                        errors.addAll(validation.getErrors().stream()
+                            .map(error -> "Line " + currentLineNumber + ": " + error)
+                            .toList());
+                    }
+                } catch (Exception e) {
+                    final int currentLineNumber = lineNumber;
+                    errors.add("Line " + currentLineNumber + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+    
+    private AdjustmentData parseExcelRow(Row row, int rowNumber, Long scenarioId) {
+        AdjustmentData adjustmentData = new AdjustmentData();
+        
+        try {
+            adjustmentData.setScenarioId(scenarioId);
+            adjustmentData.setGoc(getCellValueAsString(row.getCell(0)));
+            adjustmentData.setAccount(getCellValueAsString(row.getCell(1)));
+            adjustmentData.setCurrency(getCellValueAsString(row.getCell(2)));
+            adjustmentData.setFiscalYear((int) getCellValueAsDouble(row.getCell(3)));
+            
+            adjustmentData.setJanAmt(new BigDecimal(getCellValueAsDouble(row.getCell(4))));
+            adjustmentData.setFebAmt(new BigDecimal(getCellValueAsDouble(row.getCell(5))));
+            adjustmentData.setMarAmt(new BigDecimal(getCellValueAsDouble(row.getCell(6))));
+            adjustmentData.setAprAmt(new BigDecimal(getCellValueAsDouble(row.getCell(7))));
+            adjustmentData.setMayAmt(new BigDecimal(getCellValueAsDouble(row.getCell(8))));
+            adjustmentData.setJunAmt(new BigDecimal(getCellValueAsDouble(row.getCell(9))));
+            adjustmentData.setJulAmt(new BigDecimal(getCellValueAsDouble(row.getCell(10))));
+            adjustmentData.setAugAmt(new BigDecimal(getCellValueAsDouble(row.getCell(11))));
+            adjustmentData.setSepAmt(new BigDecimal(getCellValueAsDouble(row.getCell(12))));
+            adjustmentData.setOctAmt(new BigDecimal(getCellValueAsDouble(row.getCell(13))));
+            adjustmentData.setNovAmt(new BigDecimal(getCellValueAsDouble(row.getCell(14))));
+            adjustmentData.setDecAmt(new BigDecimal(getCellValueAsDouble(row.getCell(15))));
+            
+        } catch (Exception e) {
+            throw new ValidationException("Invalid data format: " + e.getMessage());
+        }
+        
+        return adjustmentData;
+    }
+    
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                return String.valueOf((long) cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return "";
+        }
+    }
+    
+    private double getCellValueAsDouble(Cell cell) {
+        if (cell == null) return 0.0;
+        
+        switch (cell.getCellType()) {
+            case NUMERIC:
+                return cell.getNumericCellValue();
+            case STRING:
+                try {
+                    return Double.parseDouble(cell.getStringCellValue().trim());
+                } catch (NumberFormatException e) {
+                    return 0.0;
+                }
+            default:
+                return 0.0;
+        }
+    }
+    
+    private void applyCurrencyTransformation(AdjustmentData adjustmentData) {
+        String scenarioSql = "SELECT fx_rate FROM scenario_info WHERE scenario_id = ?";
+        String fxRate;
+        
+        try {
+            fxRate = jdbcTemplate.queryForObject(scenarioSql, String.class, adjustmentData.getScenarioId());
+            if (fxRate == null) {
+                throw new ValidationException("No FX rate found for scenario ID: " + adjustmentData.getScenarioId());
+            }
+        } catch (Exception e) {
+            throw new ValidationException("Failed to get FX rate from scenario: " + e.getMessage());
+        }
+        
+        String ratesSql = "SELECT m1_rate, m2_rate, m3_rate, m4_rate, m5_rate, m6_rate, " +
+                         "m7_rate, m8_rate, m9_rate, m10_rate, m11_rate, m12_rate " +
+                         "FROM fxrate_info WHERE fx_name = ? AND year = ? AND currency = ?";
+        
+        try {
+            Map<String, Object> rates = jdbcTemplate.queryForMap(ratesSql, fxRate, adjustmentData.getFiscalYear(), adjustmentData.getCurrency());
+            
+            if (adjustmentData.getJanAmt() != null && rates.get("m1_rate") != null) {
+                adjustmentData.setJanAmt(adjustmentData.getJanAmt().multiply(new BigDecimal(rates.get("m1_rate").toString())));
+            }
+            if (adjustmentData.getFebAmt() != null && rates.get("m2_rate") != null) {
+                adjustmentData.setFebAmt(adjustmentData.getFebAmt().multiply(new BigDecimal(rates.get("m2_rate").toString())));
+            }
+            if (adjustmentData.getMarAmt() != null && rates.get("m3_rate") != null) {
+                adjustmentData.setMarAmt(adjustmentData.getMarAmt().multiply(new BigDecimal(rates.get("m3_rate").toString())));
+            }
+            if (adjustmentData.getAprAmt() != null && rates.get("m4_rate") != null) {
+                adjustmentData.setAprAmt(adjustmentData.getAprAmt().multiply(new BigDecimal(rates.get("m4_rate").toString())));
+            }
+            if (adjustmentData.getMayAmt() != null && rates.get("m5_rate") != null) {
+                adjustmentData.setMayAmt(adjustmentData.getMayAmt().multiply(new BigDecimal(rates.get("m5_rate").toString())));
+            }
+            if (adjustmentData.getJunAmt() != null && rates.get("m6_rate") != null) {
+                adjustmentData.setJunAmt(adjustmentData.getJunAmt().multiply(new BigDecimal(rates.get("m6_rate").toString())));
+            }
+            if (adjustmentData.getJulAmt() != null && rates.get("m7_rate") != null) {
+                adjustmentData.setJulAmt(adjustmentData.getJulAmt().multiply(new BigDecimal(rates.get("m7_rate").toString())));
+            }
+            if (adjustmentData.getAugAmt() != null && rates.get("m8_rate") != null) {
+                adjustmentData.setAugAmt(adjustmentData.getAugAmt().multiply(new BigDecimal(rates.get("m8_rate").toString())));
+            }
+            if (adjustmentData.getSepAmt() != null && rates.get("m9_rate") != null) {
+                adjustmentData.setSepAmt(adjustmentData.getSepAmt().multiply(new BigDecimal(rates.get("m9_rate").toString())));
+            }
+            if (adjustmentData.getOctAmt() != null && rates.get("m10_rate") != null) {
+                adjustmentData.setOctAmt(adjustmentData.getOctAmt().multiply(new BigDecimal(rates.get("m10_rate").toString())));
+            }
+            if (adjustmentData.getNovAmt() != null && rates.get("m11_rate") != null) {
+                adjustmentData.setNovAmt(adjustmentData.getNovAmt().multiply(new BigDecimal(rates.get("m11_rate").toString())));
+            }
+            if (adjustmentData.getDecAmt() != null && rates.get("m12_rate") != null) {
+                adjustmentData.setDecAmt(adjustmentData.getDecAmt().multiply(new BigDecimal(rates.get("m12_rate").toString())));
+            }
+            
+        } catch (Exception e) {
+            throw new ValidationException("Failed to apply currency transformation: " + e.getMessage());
+        }
     }
     
     private void copyAdjustmentDataToFeedData(Long adjustmentSessionId) {

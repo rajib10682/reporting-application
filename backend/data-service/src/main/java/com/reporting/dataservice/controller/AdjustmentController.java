@@ -33,9 +33,26 @@ public class AdjustmentController {
             @RequestParam("uploadType") String uploadType,
             @RequestParam("submittedBy") Long submittedBy) {
         
-        AdjustmentUploadRequest request = new AdjustmentUploadRequest(scenarioId, uploadType, submittedBy, file.getOriginalFilename());
-        IngestionStatus status = adjustmentIngestionService.processAdjustmentFile(file, request);
-        return ResponseEntity.ok(status);
+        try {
+            if (file.isEmpty()) {
+                IngestionStatus status = new IngestionStatus("FAILED", "File is empty");
+                return ResponseEntity.badRequest().body(status);
+            }
+            
+            String filename = file.getOriginalFilename();
+            if (filename == null || (!filename.endsWith(".xlsx") && !filename.endsWith(".txt"))) {
+                IngestionStatus status = new IngestionStatus("FAILED", "Only .xlsx and .txt files are supported");
+                return ResponseEntity.badRequest().body(status);
+            }
+            
+            AdjustmentUploadRequest request = new AdjustmentUploadRequest(scenarioId, uploadType, submittedBy, filename);
+            IngestionStatus status = adjustmentIngestionService.processAdjustmentFile(file, request);
+            return ResponseEntity.ok(status);
+            
+        } catch (Exception e) {
+            IngestionStatus status = new IngestionStatus("FAILED", "Error processing file: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(status);
+        }
     }
     
     @PostMapping("/approve")

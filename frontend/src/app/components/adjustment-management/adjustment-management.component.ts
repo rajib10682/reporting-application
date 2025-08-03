@@ -78,7 +78,7 @@ import { BusinessMetadataService } from '../../services/business-metadata.servic
                   <div class="file-upload-section">
                     <label class="section-label">Adjustment File</label>
                     <div class="file-input-container">
-                      <input type="file" #fileInput (change)="onFileSelected($event)" accept=".txt" class="file-input">
+                      <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx,.txt" class="file-input">
                       <button mat-stroked-button (click)="fileInput.click()" class="file-select-btn">
                         <mat-icon>attach_file</mat-icon>
                         Choose File
@@ -467,10 +467,10 @@ export class AdjustmentManagementComponent implements OnInit {
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
-      if (file.name.endsWith('.txt')) {
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.txt')) {
         this.selectedFile = file;
       } else {
-        this.snackBar.open('Please select a .txt file', 'Close', { duration: 3000 });
+        this.snackBar.open('Please select a .xlsx or .txt file', 'Close', { duration: 3000 });
         event.target.value = '';
       }
     }
