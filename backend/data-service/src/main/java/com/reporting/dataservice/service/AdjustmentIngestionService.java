@@ -7,8 +7,10 @@ import com.reporting.dataservice.dto.ValidationResult;
 import com.reporting.dataservice.exception.ValidationException;
 import com.reporting.dataservice.model.AdjustmentData;
 import com.reporting.dataservice.model.AdjustmentSession;
+import com.reporting.dataservice.model.UserInfo;
 import com.reporting.dataservice.repository.AdjustmentDataRepository;
 import com.reporting.dataservice.repository.AdjustmentSessionRepository;
+import com.reporting.dataservice.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,13 @@ public class AdjustmentIngestionService {
     private AdjustmentDataRepository adjustmentDataRepository;
     
     @Autowired
+    private UserInfoRepository userInfoRepository;
+    
+    @Autowired
     private AdjustmentSessionRepository adjustmentSessionRepository;
+    
+    @Autowired
+    private UserInfoRepository userInfoRepository;
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -227,7 +235,7 @@ public class AdjustmentIngestionService {
     }
     
     private boolean validateSubmitterRole(Long userId) {
-        String sql = "SELECT role FROM users WHERE id = ?";
+        String sql = "SELECT role FROM user_info WHERE user_id = ?";
         try {
             String role = jdbcTemplate.queryForObject(sql, String.class, userId);
             return "submitter".equalsIgnoreCase(role) || "admin".equalsIgnoreCase(role);
@@ -237,7 +245,7 @@ public class AdjustmentIngestionService {
     }
     
     private boolean validateApproverRole(Long userId) {
-        String sql = "SELECT role FROM users WHERE id = ?";
+        String sql = "SELECT role FROM user_info WHERE user_id = ?";
         try {
             String role = jdbcTemplate.queryForObject(sql, String.class, userId);
             return "approver".equalsIgnoreCase(role) || "admin".equalsIgnoreCase(role);
@@ -471,5 +479,27 @@ public class AdjustmentIngestionService {
                     "FROM adjustment_data WHERE adjustment_session_id = ?";
         
         jdbcTemplate.update(sql, adjustmentSessionId);
+    }
+    
+    public List<UserInfo> getAllUsers() {
+        String sql = "SELECT user_id, name, role FROM user_info ORDER BY name";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            UserInfo user = new UserInfo();
+            user.setUserId(rs.getLong("user_id"));
+            user.setName(rs.getString("name"));
+            user.setRole(rs.getString("role"));
+            return user;
+        });
+    }
+    
+    public List<UserInfo> getUsersByRole(String role) {
+        String sql = "SELECT user_id, name, role FROM user_info WHERE role = ? OR role = 'admin' ORDER BY name";
+        return jdbcTemplate.query(sql, new Object[]{role}, (rs, rowNum) -> {
+            UserInfo user = new UserInfo();
+            user.setUserId(rs.getLong("user_id"));
+            user.setName(rs.getString("name"));
+            user.setRole(rs.getString("role"));
+            return user;
+        });
     }
 }

@@ -14,7 +14,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { AdjustmentService, AdjustmentSession, AdjustmentApprovalRequest } from '../../services/adjustment.service';
+import { AdjustmentService, AdjustmentSession, AdjustmentApprovalRequest, UserInfo } from '../../services/adjustment.service';
 import { BusinessMetadataService } from '../../services/business-metadata.service';
 
 @Component({
@@ -58,6 +58,15 @@ import { BusinessMetadataService } from '../../services/business-metadata.servic
               </mat-card-header>
               <mat-card-content>
                 <div class="upload-form">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Select Submitter</mat-label>
+                    <mat-select [(value)]="selectedSubmitter" required>
+                      <mat-option *ngFor="let user of submitters" [value]="user">
+                        {{user.name}} ({{user.role}})
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Select Scenario</mat-label>
                     <mat-select [(value)]="selectedScenario" required>
@@ -117,6 +126,21 @@ import { BusinessMetadataService } from '../../services/business-metadata.servic
               <mat-card-header>
                 <mat-card-title>Pending Adjustments</mat-card-title>
                 <mat-card-subtitle>Review and approve/reject adjustment uploads</mat-card-subtitle>
+  loadUsers() {
+    this.adjustmentService.getAllUsers().subscribe({
+      next: (users) => {
+        this.users = users;
+        this.submitters = users.filter(u => u.role === 'submitter' || u.role === 'admin');
+        this.approvers = users.filter(u => u.role === 'approver' || u.role === 'admin');
+      },
+      error: (error) => {
+        this.snackBar.open('Failed to load users', 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+
+
               </mat-card-header>
               <mat-card-content>
                 <div *ngIf="pendingAdjustments.length === 0" class="no-data">
@@ -138,6 +162,15 @@ import { BusinessMetadataService } from '../../services/business-metadata.servic
                     <p *ngIf="adjustment.errorMessage"><strong>Message:</strong> {{adjustment.errorMessage}}</p>
                   </div>
                   <div class="approval-actions">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Select Approver</mat-label>
+                      <mat-select [(value)]="selectedApprover" required>
+                        <mat-option *ngFor="let user of approvers" [value]="user">
+                          {{user.name}} ({{user.role}})
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    
                     <mat-form-field appearance="outline" class="comments-field">
                       <mat-label>Approval Comments</mat-label>
                       <textarea matInput [(ngModel)]="approvalComments[adjustment.sessionId]" rows="2"></textarea>
@@ -145,13 +178,13 @@ import { BusinessMetadataService } from '../../services/business-metadata.servic
                     <div class="action-buttons">
                       <button mat-raised-button color="primary" 
                               (click)="processApproval(adjustment.sessionId, 'APPROVE')"
-                              [disabled]="processing">
+                              [disabled]="processing || !selectedApprover">
                         <mat-icon>check</mat-icon>
                         Approve
                       </button>
                       <button mat-raised-button color="warn" 
                               (click)="processApproval(adjustment.sessionId, 'REJECT')"
-                              [disabled]="processing">
+                              [disabled]="processing || !selectedApprover">
                         <mat-icon>close</mat-icon>
                         Reject
                       </button>
@@ -408,8 +441,11 @@ export class AdjustmentManagementComponent implements OnInit {
   allAdjustments: AdjustmentSession[] = [];
   approvalComments: { [key: number]: string } = {};
   
-  currentUserId: number = 1;
-  currentUserRole: string = 'admin';
+  users: UserInfo[] = [];
+  submitters: UserInfo[] = [];
+  approvers: UserInfo[] = [];
+  selectedSubmitter: UserInfo | null = null;
+  selectedApprover: UserInfo | null = null;
   
   constructor(
     private adjustmentService: AdjustmentService,
@@ -421,15 +457,9 @@ export class AdjustmentManagementComponent implements OnInit {
   ngOnInit() {
     this.loadScenarios();
     this.loadAdjustments();
+    this.loadUsers();
   }
 
-  get canSubmit(): boolean {
-    return this.currentUserRole === 'submitter' || this.currentUserRole === 'admin';
-  }
-
-  get canApprove(): boolean {
-    return this.currentUserRole === 'approver' || this.currentUserRole === 'admin';
-  }
 
   loadScenarios() {
     this.businessMetadataService.getAvailableScenarios().subscribe({
@@ -477,7 +507,8 @@ export class AdjustmentManagementComponent implements OnInit {
   }
 
   canUpload(): boolean {
-    return this.selectedScenario !== null && this.selectedFile !== null && this.uploadType !== null;
+    return this.selectedScenario !== null && this.selectedFile !== null && 
+           this.uploadType !== null && this.selectedSubmitter !== null;
   }
 
   uploadAdjustment() {
@@ -488,7 +519,7 @@ export class AdjustmentManagementComponent implements OnInit {
       this.selectedFile!,
       this.selectedScenario!,
       this.uploadType,
-      this.currentUserId
+      this.selectedSubmitter!.userId
     ).subscribe({
       next: (status) => {
         this.uploading = false;
@@ -504,11 +535,16 @@ export class AdjustmentManagementComponent implements OnInit {
   }
 
   processApproval(sessionId: number, action: string) {
+    if (!this.selectedApprover) {
+      this.snackBar.open('Please select an approver', 'Close', { duration: 3000 });
+      return;
+    }
+    
     this.processing = true;
     const request: AdjustmentApprovalRequest = {
       sessionId: sessionId,
       action: action,
-      approvedBy: this.currentUserId,
+      approvedBy: this.selectedApprover.userId,
       comments: this.approvalComments[sessionId] || ''
     };
 
@@ -561,9 +597,19 @@ export class AdjustmentManagementComponent implements OnInit {
     this.selectedScenario = null;
     this.uploadType = 'INCREMENTAL';
     this.selectedFile = null;
+    this.selectedSubmitter = null;
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
     }
   }
+
+  get canSubmit(): boolean {
+    return this.submitters.length > 0;
+  }
+
+  get canApprove(): boolean {
+    return this.approvers.length > 0;
+  }
+
 }

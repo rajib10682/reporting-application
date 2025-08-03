@@ -3,6 +3,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export interface UserInfo {
+  userId: number;
+  name: string;
+  role: string;
+}
+
 export interface AdjustmentSession {
   sessionId: number;
   filename: string;
@@ -79,5 +85,17 @@ export class AdjustmentService {
 
   downloadTemplate(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/template/download`, { responseType: 'blob' });
+  }
+  
+  getAllUsers(): Observable<UserInfo[]> {
+    return this.http.get<UserInfo[]>(`${this.apiUrl}/users`);
+  }
+  
+  getSubmitters(): Observable<UserInfo[]> {
+    return this.http.get<UserInfo[]>(`${this.apiUrl}/users/submitters`);
+  }
+  
+  getApprovers(): Observable<UserInfo[]> {
+    return this.http.get<UserInfo[]>(`${this.apiUrl}/users/approvers`);
   }
 }

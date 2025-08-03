@@ -4,6 +4,7 @@ import com.reporting.dataservice.dto.AdjustmentUploadRequest;
 import com.reporting.dataservice.dto.AdjustmentApprovalRequest;
 import com.reporting.dataservice.dto.IngestionStatus;
 import com.reporting.dataservice.model.AdjustmentSession;
+import com.reporting.dataservice.model.UserInfo;
 import com.reporting.dataservice.service.AdjustmentIngestionService;
 import com.reporting.dataservice.service.ExcelTemplateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,5 +97,23 @@ public class AdjustmentController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
+    }
+    
+    @GetMapping("/users")
+    public ResponseEntity<List<UserInfo>> getAllUsers() {
+        List<UserInfo> users = adjustmentIngestionService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/users/submitters")
+    public ResponseEntity<List<UserInfo>> getSubmitters() {
+        List<UserInfo> submitters = adjustmentIngestionService.getUsersByRole("submitter");
+        return ResponseEntity.ok(submitters);
+    }
+    
+    @GetMapping("/users/approvers")
+    public ResponseEntity<List<UserInfo>> getApprovers() {
+        List<UserInfo> approvers = adjustmentIngestionService.getUsersByRole("approver");
+        return ResponseEntity.ok(approvers);
     }
 }

@@ -1,0 +1,208 @@
+<div class="adjustment-management-container">
+  <mat-card class="main-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>tune</mat-icon>
+        Adjustment Management
+      </mat-card-title>
+      <mat-card-subtitle>Upload and manage data adjustments with approval workflow</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-tab-group>
+        <!-- Upload Adjustments Tab -->
+        <mat-tab label="Upload Adjustments" *ngIf="canSubmit">
+          <div class="tab-content">
+            <div class="upload-section">
+              <h3>Upload New Adjustment</h3>
+              
+              <div class="form-grid">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Select Submitter</mat-label>
+                  <mat-select [(value)]="selectedSubmitter" required>
+                    <mat-option *ngFor="let user of submitters" [value]="user">
+                      {{user.name}} ({{user.role}})
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Select Scenario</mat-label>
+                  <mat-select [(value)]="selectedScenario" required>
+                    <mat-option *ngFor="let scenario of scenarios" [value]="scenario.scenario_id">
+                      {{scenario.scenario_name}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Upload Type</mat-label>
+                  <mat-radio-group [(ngModel)]="uploadType" class="radio-group">
+                    <mat-radio-button value="incremental">Incremental</mat-radio-button>
+                    <mat-radio-button value="replace">Replace</mat-radio-button>
+                  </mat-radio-group>
+                </mat-form-field>
+
+                <div class="file-upload-section">
+                  <input type="file" 
+                         #fileInput 
+                         (change)="onFileSelected($event)" 
+                         accept=".xlsx,.txt"
+                         style="display: none;">
+                  
+                  <button mat-stroked-button 
+                          (click)="fileInput.click()" 
+                          class="file-select-btn">
+                    <mat-icon>attach_file</mat-icon>
+                    Select File
+                  </button>
+                  
+                  <span class="file-name" *ngIf="selectedFile">
+                    {{selectedFile.name}}
+                  </span>
+                </div>
+
+                <div class="action-buttons">
+                  <button mat-raised-button 
+                          color="primary" 
+                          (click)="uploadAdjustment()"
+                          [disabled]="!canUpload() || uploading">
+                    <mat-icon>cloud_upload</mat-icon>
+                    <span *ngIf="!uploading">Upload Adjustment</span>
+                    <span *ngIf="uploading">Uploading...</span>
+                  </button>
+
+                  <button mat-stroked-button 
+                          (click)="downloadTemplate()"
+                          class="template-btn">
+                    <mat-icon>download</mat-icon>
+                    Download Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Pending Approvals Tab -->
+        <mat-tab label="Pending Approvals" *ngIf="canApprove">
+          <div class="tab-content">
+            <div class="approvals-section">
+              <h3>Pending Adjustments for Approval</h3>
+              
+              <div *ngIf="pendingAdjustments.length === 0" class="no-data">
+                <mat-icon>inbox</mat-icon>
+                <p>No pending adjustments for approval</p>
+              </div>
+
+              <div *ngFor="let adjustment of pendingAdjustments" class="adjustment-card">
+                <mat-card>
+                  <mat-card-header>
+                    <mat-card-title>Session #{{adjustment.sessionId}}</mat-card-title>
+                    <mat-card-subtitle>
+                      Scenario: {{adjustment.scenarioName}} | 
+                      Submitted: {{adjustment.createdAt | date:'medium'}}
+                    </mat-card-subtitle>
+                  </mat-card-header>
+
+                  <mat-card-content>
+                    <div class="adjustment-details">
+                      <mat-chip-listbox>
+                        <mat-chip>{{adjustment.uploadType}}</mat-chip>
+                        <mat-chip [color]="adjustment.status === 'PENDING' ? 'warn' : 'primary'">
+                          {{adjustment.status}}
+                        </mat-chip>
+                      </mat-chip-listbox>
+
+                      <p><strong>File:</strong> {{adjustment.filename}}</p>
+                      <p><strong>Records:</strong> {{adjustment.totalRecords}} total, 
+                         {{adjustment.successfulRecords}} successful, 
+                         {{adjustment.failedRecords}} failed</p>
+                    </div>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Select Approver</mat-label>
+                      <mat-select [(value)]="selectedApprover" required>
+                        <mat-option *ngFor="let user of approvers" [value]="user">
+                          {{user.name}} ({{user.role}})
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="comments-field">
+                      <mat-label>Approval Comments</mat-label>
+                      <textarea matInput 
+                                [(ngModel)]="approvalComments[adjustment.sessionId]" 
+                                rows="2"></textarea>
+                    </mat-form-field>
+
+                    <div class="action-buttons">
+                      <button mat-raised-button color="primary" 
+                              (click)="processApproval(adjustment.sessionId, 'APPROVE')"
+                              [disabled]="processing || !selectedApprover">
+                        <mat-icon>check</mat-icon>
+                        Approve
+                      </button>
+                      <button mat-raised-button color="warn" 
+                              (click)="processApproval(adjustment.sessionId, 'REJECT')"
+                              [disabled]="processing || !selectedApprover">
+                        <mat-icon>close</mat-icon>
+                        Reject
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Adjustment History Tab -->
+        <mat-tab label="Adjustment History">
+          <div class="tab-content">
+            <div class="history-section">
+              <h3>Adjustment History</h3>
+              
+              <div *ngIf="allAdjustments.length === 0" class="no-data">
+                <mat-icon>history</mat-icon>
+                <p>No adjustment history available</p>
+              </div>
+
+              <div *ngFor="let adjustment of allAdjustments" class="adjustment-card">
+                <mat-card>
+                  <mat-card-header>
+                    <mat-card-title>Session #{{adjustment.sessionId}}</mat-card-title>
+                    <mat-card-subtitle>
+                      {{adjustment.createdAt | date:'medium'}}
+                    </mat-card-subtitle>
+                  </mat-card-header>
+
+                  <mat-card-content>
+                    <div class="adjustment-details">
+                      <mat-chip-listbox>
+                        <mat-chip>{{adjustment.uploadType}}</mat-chip>
+                        <mat-chip [color]="getStatusColor(adjustment.status)">
+                          {{adjustment.status}}
+                        </mat-chip>
+                      </mat-chip-listbox>
+
+                      <p><strong>Scenario:</strong> {{adjustment.scenarioName}}</p>
+                      <p><strong>File:</strong> {{adjustment.filename}}</p>
+                      <p><strong>Records:</strong> {{adjustment.totalRecords}} total, 
+                         {{adjustment.successfulRecords}} successful, 
+                         {{adjustment.failedRecords}} failed</p>
+                      
+                      <div *ngIf="adjustment.comments" class="comments">
+                        <strong>Comments:</strong> {{adjustment.comments}}
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+</div>
