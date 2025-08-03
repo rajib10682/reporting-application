@@ -9,8 +9,10 @@ import com.reporting.reportservice.repository.JoinMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MetadataService {
@@ -23,6 +25,9 @@ public class MetadataService {
     
     @Autowired
     private JoinMetadataRepository joinMetadataRepository;
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     
     public List<TableMetadata> getAllActiveTables() {
         return tableMetadataRepository.findByIsActiveTrue();
@@ -132,6 +137,10 @@ public class MetadataService {
         joinMetadataRepository.save(new JoinMetadata(scenarioTable, fxrateTable, "fx_rate", "fx_id", "LEFT"));
         joinMetadataRepository.save(new JoinMetadata(gocTable, segmentTable, "segment_id", "segment_id", "INNER"));
         joinMetadataRepository.save(new JoinMetadata(gocTable, geographyTable, "geo_id", "geo_id", "INNER"));
+    }
+    
+    public List<Map<String, Object>> executeQuery(String sql) {
+        return jdbcTemplate.queryForList(sql);
     }
     
     private String getMonthName(int month) {

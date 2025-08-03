@@ -18,7 +18,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/adjustments")
-@CrossOrigin(origins = "*")
 public class AdjustmentController {
     
     @Autowired

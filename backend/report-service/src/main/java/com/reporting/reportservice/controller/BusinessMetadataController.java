@@ -12,7 +12,6 @@ import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/business-metadata")
-@CrossOrigin(origins = "*")
 public class BusinessMetadataController {
     
     @Autowired
