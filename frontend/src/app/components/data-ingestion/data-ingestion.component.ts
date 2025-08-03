@@ -80,7 +80,7 @@ export class DataIngestionComponent {
       }
     }, 200);
 
-    this.http.post<IngestionStatus>(`${environment.apiUrl}/data/feed/upload`, formData)
+    this.http.post<IngestionStatus>(`${environment.apiUrl}/api/data/feed/upload`, formData)
       .subscribe({
         next: (response) => {
           clearInterval(progressInterval);
