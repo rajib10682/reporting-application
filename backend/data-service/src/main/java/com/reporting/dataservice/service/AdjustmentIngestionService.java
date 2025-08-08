@@ -16,6 +16,7 @@ import com.reporting.dataservice.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.poi.ss.usermodel.*;
@@ -118,6 +120,7 @@ public class AdjustmentIngestionService {
         return status;
     }
     
+    @Transactional
     public IngestionStatus processApproval(AdjustmentApprovalRequest request) {
         if (!validateApproverRole(request.getApprovedBy())) {
             throw new ValidationException("User does not have approver role");
@@ -138,10 +141,11 @@ public class AdjustmentIngestionService {
             session.setStatus("APPROVED");
             
             if ("REPLACE".equals(session.getUploadType())) {
-                jdbcTemplate.update("DELETE FROM feed_data WHERE scenario_id = ?", session.getScenarioId());
+                List<AdjustmentData> aggregatedData = aggregateAdjustmentData(session.getSessionId());
+                copyAdjustmentDataToFeedDataWithReplace(session.getSessionId(), aggregatedData);
+            } else {
+                copyAdjustmentDataToFeedData(session.getSessionId());
             }
-            
-            copyAdjustmentDataToFeedData(session.getSessionId());
             
         } else if ("REJECT".equals(request.getAction())) {
             session.setStatus("REJECTED");
@@ -514,5 +518,116 @@ public class AdjustmentIngestionService {
             user.setRole(rs.getString("role"));
             return user;
         });
+    }
+    
+    private List<AdjustmentData> aggregateAdjustmentData(Long adjustmentSessionId) {
+        List<AdjustmentData> rawData = adjustmentDataRepository.findByAdjustmentSessionId(adjustmentSessionId);
+        Map<String, AdjustmentData> aggregatedMap = new HashMap<>();
+        
+        for (AdjustmentData data : rawData) {
+            String key = data.getGoc() + "|" + data.getAccount() + "|" + data.getCurrency() + "|" + data.getFiscalYear();
+            
+            if (aggregatedMap.containsKey(key)) {
+                AdjustmentData existing = aggregatedMap.get(key);
+                existing.setJanAmt(addBigDecimals(existing.getJanAmt(), data.getJanAmt()));
+                existing.setFebAmt(addBigDecimals(existing.getFebAmt(), data.getFebAmt()));
+                existing.setMarAmt(addBigDecimals(existing.getMarAmt(), data.getMarAmt()));
+                existing.setAprAmt(addBigDecimals(existing.getAprAmt(), data.getAprAmt()));
+                existing.setMayAmt(addBigDecimals(existing.getMayAmt(), data.getMayAmt()));
+                existing.setJunAmt(addBigDecimals(existing.getJunAmt(), data.getJunAmt()));
+                existing.setJulAmt(addBigDecimals(existing.getJulAmt(), data.getJulAmt()));
+                existing.setAugAmt(addBigDecimals(existing.getAugAmt(), data.getAugAmt()));
+                existing.setSepAmt(addBigDecimals(existing.getSepAmt(), data.getSepAmt()));
+                existing.setOctAmt(addBigDecimals(existing.getOctAmt(), data.getOctAmt()));
+                existing.setNovAmt(addBigDecimals(existing.getNovAmt(), data.getNovAmt()));
+                existing.setDecAmt(addBigDecimals(existing.getDecAmt(), data.getDecAmt()));
+            } else {
+                aggregatedMap.put(key, data);
+            }
+        }
+        
+        return new ArrayList<>(aggregatedMap.values());
+    }
+    
+    private BigDecimal addBigDecimals(BigDecimal a, BigDecimal b) {
+        if (a == null) a = BigDecimal.ZERO;
+        if (b == null) b = BigDecimal.ZERO;
+        return a.add(b);
+    }
+    
+    private void createReverseEntries(Long scenarioId, List<AdjustmentData> aggregatedData, Long fileSessionId) {
+        for (AdjustmentData data : aggregatedData) {
+            String checkSql = "SELECT record_id, jan_amt, feb_amt, mar_amt, apr_amt, may_amt, jun_amt, " +
+                             "jul_amt, aug_amt, sep_amt, oct_amt, nov_amt, dec_amt " +
+                             "FROM feed_data WHERE scenario_id = ? AND goc = ? AND account = ? AND currency = ? AND fiscal_year = ?";
+            
+            try {
+                List<Map<String, Object>> existingRecords = jdbcTemplate.queryForList(checkSql, 
+                    scenarioId, data.getGoc(), data.getAccount(), data.getCurrency(), data.getFiscalYear());
+                
+                if (!existingRecords.isEmpty()) {
+                    BigDecimal[] existingAmounts = new BigDecimal[12];
+                    for (int i = 0; i < 12; i++) {
+                        existingAmounts[i] = BigDecimal.ZERO;
+                    }
+                    
+                    for (Map<String, Object> record : existingRecords) {
+                        existingAmounts[0] = addBigDecimals(existingAmounts[0], (BigDecimal) record.get("jan_amt"));
+                        existingAmounts[1] = addBigDecimals(existingAmounts[1], (BigDecimal) record.get("feb_amt"));
+                        existingAmounts[2] = addBigDecimals(existingAmounts[2], (BigDecimal) record.get("mar_amt"));
+                        existingAmounts[3] = addBigDecimals(existingAmounts[3], (BigDecimal) record.get("apr_amt"));
+                        existingAmounts[4] = addBigDecimals(existingAmounts[4], (BigDecimal) record.get("may_amt"));
+                        existingAmounts[5] = addBigDecimals(existingAmounts[5], (BigDecimal) record.get("jun_amt"));
+                        existingAmounts[6] = addBigDecimals(existingAmounts[6], (BigDecimal) record.get("jul_amt"));
+                        existingAmounts[7] = addBigDecimals(existingAmounts[7], (BigDecimal) record.get("aug_amt"));
+                        existingAmounts[8] = addBigDecimals(existingAmounts[8], (BigDecimal) record.get("sep_amt"));
+                        existingAmounts[9] = addBigDecimals(existingAmounts[9], (BigDecimal) record.get("oct_amt"));
+                        existingAmounts[10] = addBigDecimals(existingAmounts[10], (BigDecimal) record.get("nov_amt"));
+                        existingAmounts[11] = addBigDecimals(existingAmounts[11], (BigDecimal) record.get("dec_amt"));
+                    }
+                    
+                    String reverseSql = "INSERT INTO feed_data (ingestion_session_id, scenario_id, goc, account, fiscal_year, currency, " +
+                                       "jan_amt, feb_amt, mar_amt, apr_amt, may_amt, jun_amt, jul_amt, aug_amt, " +
+                                       "sep_amt, oct_amt, nov_amt, dec_amt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    
+                    jdbcTemplate.update(reverseSql, fileSessionId, scenarioId, data.getGoc(), data.getAccount(), 
+                        data.getFiscalYear(), data.getCurrency(),
+                        existingAmounts[0].negate(), existingAmounts[1].negate(), existingAmounts[2].negate(),
+                        existingAmounts[3].negate(), existingAmounts[4].negate(), existingAmounts[5].negate(),
+                        existingAmounts[6].negate(), existingAmounts[7].negate(), existingAmounts[8].negate(),
+                        existingAmounts[9].negate(), existingAmounts[10].negate(), existingAmounts[11].negate(),
+                        LocalDateTime.now());
+                }
+            } catch (Exception e) {
+            }
+        }
+    }
+    
+    private void copyAdjustmentDataToFeedDataWithReplace(Long adjustmentSessionId, List<AdjustmentData> aggregatedData) {
+        AdjustmentSession adjustmentSession = adjustmentSessionRepository.findById(adjustmentSessionId)
+            .orElseThrow(() -> new ValidationException("Adjustment session not found"));
+        
+        FileIngestionSession fileSession = new FileIngestionSession(adjustmentSession.getFilename() + " (Approved - Replace)");
+        fileSession.setStatus("COMPLETED");
+        fileSession.setTotalRecords(aggregatedData.size());
+        fileSession.setSuccessfulRecords(aggregatedData.size());
+        fileSession.setFailedRecords(0);
+        fileSession.markCompleted();
+        fileSession = fileIngestionSessionRepository.save(fileSession);
+        
+        createReverseEntries(adjustmentSession.getScenarioId(), aggregatedData, fileSession.getSessionId());
+        
+        for (AdjustmentData data : aggregatedData) {
+            String sql = "INSERT INTO feed_data (ingestion_session_id, scenario_id, goc, account, fiscal_year, currency, " +
+                        "jan_amt, feb_amt, mar_amt, apr_amt, may_amt, jun_amt, jul_amt, aug_amt, " +
+                        "sep_amt, oct_amt, nov_amt, dec_amt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            jdbcTemplate.update(sql, fileSession.getSessionId(), data.getScenarioId(), data.getGoc(), data.getAccount(),
+                data.getFiscalYear(), data.getCurrency(),
+                data.getJanAmt(), data.getFebAmt(), data.getMarAmt(), data.getAprAmt(),
+                data.getMayAmt(), data.getJunAmt(), data.getJulAmt(), data.getAugAmt(),
+                data.getSepAmt(), data.getOctAmt(), data.getNovAmt(), data.getDecAmt(),
+                LocalDateTime.now());
+        }
     }
 }
