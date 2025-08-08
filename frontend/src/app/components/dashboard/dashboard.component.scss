@@ -8,22 +8,22 @@
 
 .welcome-card {
   margin-bottom: 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--citi-blue);
   color: white;
   
   mat-card-title {
     color: white;
     font-size: 2.2em;
-    font-weight: 300;
+    font-weight: 400;
   }
   
   mat-card-subtitle {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.9);
     font-size: 1.1em;
   }
   
   mat-card-content p {
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.95);
     font-size: 1.1em;
     line-height: 1.6;
   }
@@ -45,7 +45,7 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   
   mat-card-header {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: var(--citi-blue);
     color: white;
     padding: 20px;
     
@@ -75,32 +75,20 @@
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5, 109, 174, 0.2);
   
   mat-card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-dark);
   }
 }
 
-.feature-card:nth-child(1) mat-card-header {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.feature-card:nth-child(2) mat-card-header {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.feature-card:nth-child(3) mat-card-header {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.feature-card:nth-child(4) mat-card-header {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-}
-
+.feature-card:nth-child(1) mat-card-header,
+.feature-card:nth-child(2) mat-card-header,
+.feature-card:nth-child(3) mat-card-header,
+.feature-card:nth-child(4) mat-card-header,
 .feature-card:nth-child(5) mat-card-header {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  background: var(--citi-blue);
 }
 
 .stats-section {
@@ -135,20 +123,14 @@
   font-size: 56px;
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--citi-blue);
 }
 
 .stat-text h3 {
   margin: 0;
   font-size: 2.5em;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--citi-blue);
 }
 
 .stat-text p {
