@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.2">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Database Performance Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments">Load testing for PostgreSQL database performance</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="DB_HOST" elementType="Argument">
+            <stringProp name="Argument.name">DB_HOST</stringProp>
+            <stringProp name="Argument.value">localhost</stringProp>
+          </elementProp>
+          <elementProp name="DB_PORT" elementType="Argument">
+            <stringProp name="Argument.name">DB_PORT</stringProp>
+            <stringProp name="Argument.value">5432</stringProp>
+          </elementProp>
+          <elementProp name="DB_NAME" elementType="Argument">
+            <stringProp name="Argument.name">DB_NAME</stringProp>
+            <stringProp name="Argument.value">reportdb</stringProp>
+          </elementProp>
+          <elementProp name="DB_USER" elementType="Argument">
+            <stringProp name="Argument.name">DB_USER</stringProp>
+            <stringProp name="Argument.value">postgres</stringProp>
+          </elementProp>
+          <elementProp name="DB_PASSWORD" elementType="Argument">
+            <stringProp name="Argument.name">DB_PASSWORD</stringProp>
+            <stringProp name="Argument.value">postgres</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Database Connection Pool Test" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControllerGui" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">10</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">20</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">30</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <JDBCDataSource guiclass="TestBeanGUI" testclass="JDBCDataSource" testname="PostgreSQL Connection Config" enabled="true">
+          <boolProp name="autocommit">true</boolProp>
+          <stringProp name="checkQuery">SELECT 1</stringProp>
+          <stringProp name="connectionAge">5000</stringProp>
+          <stringProp name="connectionProperties"></stringProp>
+          <stringProp name="dataSource">postgres_pool</stringProp>
+          <stringProp name="dbUrl">jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}</stringProp>
+          <stringProp name="driver">org.postgresql.Driver</stringProp>
+          <stringProp name="initQuery"></stringProp>
+          <boolProp name="keepAlive">true</boolProp>
+          <stringProp name="password">${DB_PASSWORD}</stringProp>
+          <boolProp name="poolPreparedStatements">false</boolProp>
+          <boolProp name="preinit">false</boolProp>
+          <stringProp name="timeout">10000</stringProp>
+          <stringProp name="transactionIsolation">DEFAULT</stringProp>
+          <boolProp name="trimInterval">60000</boolProp>
+          <stringProp name="username">${DB_USER}</stringProp>
+        </JDBCDataSource>
+        <hashTree/>
+        
+        <!-- Validation Query Performance Test -->
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Scenario Validation Query" enabled="true">
+          <stringProp name="dataSource">postgres_pool</stringProp>
+          <stringProp name="query">SELECT COUNT(*) FROM scenario_info WHERE scenario_id = ?</stringProp>
+          <stringProp name="queryArguments">1</stringProp>
+          <stringProp name="queryArgumentsTypes">INTEGER</stringProp>
+          <stringProp name="queryTimeout">30</stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows">0</stringProp>
+          <stringProp name="resultVariable"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        
+        <!-- Complex Join Query Test -->
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Feed Data Join Query" enabled="true">
+          <stringProp name="dataSource">postgres_pool</stringProp>
+          <stringProp name="query">SELECT fd.*, si.scenario_name, si.start_date, si.end_date 
+FROM feed_data fd 
+JOIN scenario_info si ON fd.scenario_id = si.scenario_id 
+WHERE fd.fiscal_year = ? AND fd.currency = ? 
+LIMIT 1000</stringProp>
+          <stringProp name="queryArguments">2024,USD</stringProp>
+          <stringProp name="queryArgumentsTypes">INTEGER,VARCHAR</stringProp>
+          <stringProp name="queryTimeout">60</stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows">1000</stringProp>
+          <stringProp name="resultVariable"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        
+        <!-- GOC Analysis Query Test -->
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="GOC Analysis Query" enabled="true">
+          <stringProp name="dataSource">postgres_pool</stringProp>
+          <stringProp name="query">SELECT g.goc, g.segment_id, g.geo_id, g.period_id, g.goc_value,
+       s.segment_name, geo.geo_name
+FROM goc_info g
+LEFT JOIN segment_info s ON g.segment_id = s.segment_id AND g.period_id = s.period_id
+LEFT JOIN geography_info geo ON g.geo_id = geo.geo_id AND g.period_id = geo.period_id
+WHERE g.period_id = ?
+ORDER BY g.goc_value DESC
+LIMIT 500</stringProp>
+          <stringProp name="queryArguments">2024Q1</stringProp>
+          <stringProp name="queryArgumentsTypes">VARCHAR</stringProp>
+          <stringProp name="queryTimeout">60</stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows">500</stringProp>
+          <stringProp name="resultVariable"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        
+        <!-- Leaf Account Validation Test -->
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Leaf Account Validation" enabled="true">
+          <stringProp name="dataSource">postgres_pool</stringProp>
+          <stringProp name="query">SELECT COUNT(*) as child_count 
+FROM account_info child 
+WHERE child.account_parent_id = ? AND child.period_id = ?</stringProp>
+          <stringProp name="queryArguments">346781,2024Q1</stringProp>
+          <stringProp name="queryArgumentsTypes">VARCHAR,VARCHAR</stringProp>
+          <stringProp name="queryTimeout">30</stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows">1</stringProp>
+          <stringProp name="resultVariable"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+        
+        <!-- FX Rate Lookup Test -->
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="FX Rate Lookup" enabled="true">
+          <stringProp name="dataSource">postgres_pool</stringProp>
+          <stringProp name="query">SELECT m1_rate, m2_rate, m3_rate, m4_rate, m5_rate, m6_rate,
+       m7_rate, m8_rate, m9_rate, m10_rate, m11_rate, m12_rate
+FROM fxrate_info 
+WHERE currency = ? AND year = ?
+LIMIT 1</stringProp>
+          <stringProp name="queryArguments">USD,2024</stringProp>
+          <stringProp name="queryArgumentsTypes">VARCHAR,INTEGER</stringProp>
+          <stringProp name="queryTimeout">30</stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows">1</stringProp>
+          <stringProp name="resultVariable"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+      </hashTree>
+      
+      <!-- High Concurrency Test Group -->
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="High Concurrency Database Test" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControllerGui" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">5</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">50</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">60</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <JDBCDataSource guiclass="TestBeanGUI" testclass="JDBCDataSource" testname="PostgreSQL High Concurrency Config" enabled="true">
+          <boolProp name="autocommit">true</boolProp>
+          <stringProp name="checkQuery">SELECT 1</stringProp>
+          <stringProp name="connectionAge">5000</stringProp>
+          <stringProp name="connectionProperties"></stringProp>
+          <stringProp name="dataSource">postgres_high_concurrency</stringProp>
+          <stringProp name="dbUrl">jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}</stringProp>
+          <stringProp name="driver">org.postgresql.Driver</stringProp>
+          <stringProp name="initQuery"></stringProp>
+          <boolProp name="keepAlive">true</boolProp>
+          <stringProp name="password">${DB_PASSWORD}</stringProp>
+          <boolProp name="poolPreparedStatements">true</boolProp>
+          <boolProp name="preinit">false</boolProp>
+          <stringProp name="timeout">10000</stringProp>
+          <stringProp name="transactionIsolation">DEFAULT</stringProp>
+          <boolProp name="trimInterval">60000</boolProp>
+          <stringProp name="username">${DB_USER}</stringProp>
+        </JDBCDataSource>
+        <hashTree/>
+        
+        <!-- Concurrent Validation Queries -->
+        <JDBCSampler guiclass="TestBeanGUI" testclass="JDBCSampler" testname="Concurrent Validation Mix" enabled="true">
+          <stringProp name="dataSource">postgres_high_concurrency</stringProp>
+          <stringProp name="query">SELECT 
+  (SELECT COUNT(*) FROM scenario_info WHERE scenario_id = 1) as scenario_count,
+  (SELECT COUNT(*) FROM goc_info WHERE goc = 'abc123' AND period_id = '2024Q1') as goc_count,
+  (SELECT COUNT(*) FROM account_info WHERE account_id = '346781' AND period_id = '2024Q1') as account_count</stringProp>
+          <stringProp name="queryArguments"></stringProp>
+          <stringProp name="queryArgumentsTypes"></stringProp>
+          <stringProp name="queryTimeout">30</stringProp>
+          <stringProp name="queryType">Select Statement</stringProp>
+          <stringProp name="resultSetHandler">Store as String</stringProp>
+          <stringProp name="resultSetMaxRows">1</stringProp>
+          <stringProp name="resultVariable"></stringProp>
+        </JDBCSampler>
+        <hashTree/>
+      </hashTree>
+      
+      <!-- Results Collection -->
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename">../results/database-performance-results.jtl</stringProp>
+      </ResultCollector>
+      <hashTree/>
+      
+      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename">../results/database-summary-report.jtl</stringProp>
+      </ResultCollector>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
